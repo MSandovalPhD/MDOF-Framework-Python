@@ -1,36 +1,37 @@
 from rdflib import Graph
-from typing import List, Any
+from typing import List, Any, Optional
 
 # Ontology file path (relative to script root)
 ONTOLOGY_ADDRESS = "./idoo.owl"
 
-class OntCtrlManager:
-    """Manages controller attributes retrieved from ontology."""
-    def __init__(self, controller: 'OntCtrl'):
-        self.vid = controller.vid
-        self.pid = controller.pid
-        self.header = controller.header
-        for row in controller.ControllerAttributes():
-            self.product_name = str(row.name)
-            self.level = str(row.level).split("#")[-1]  # Extract fragment after '#'
-
-class OntCtrl:
-    """Handles ontology queries for controller and device attributes."""
-    def __init__(self, vid: str, pid: str):
+class LisuOntology:
+    """Simplified interface for querying LISU ontology data."""
+    def __init__(self, vid: str = "", pid: str = "", controller_name: str = ""):
         self.vid = vid
         self.pid = pid
+        self.controller_name = controller_name
         self.header = """PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX owl: <http://www.w3.org/2002/07/owl#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX lisu: <https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#>"""
 
-    def ControllerAttributes(self) -> Any:
-        """Query basic controller attributes (name, level)."""
+    def _query(self, query_string: str) -> Any:
+        """Execute an RDF query on the ontology."""
         graph = Graph()
-        graph.parse(ONTOLOGY_ADDRESS)
+        try:
+            graph.parse(ONTOLOGY_ADDRESS)
+            return graph.query(query_string)
+        except Exception as e:
+            print(f"Failed to query ontology: {e}")
+            return []
+
+    def get_controller_attributes(self) -> Optional[dict]:
+        """Get basic attributes (name, level) for a specific controller."""
+        if not self.vid or not self.pid:
+            return None
         query_string = f""" {self.header}
-SELECT ?controller ?level ?name ?VID ?PID
+SELECT ?name ?level
 WHERE
 {{
     ?controller lisu:productName ?name .
@@ -39,15 +40,18 @@ WHERE
     ?controller lisu:isAppropriate ?level .
     FILTER(?VID = "{self.vid}" && ?PID="{self.pid}")
 }}
-GROUP BY ?controller ?level ?name ?VID ?PID"""
-        return graph.query(query_string)
+GROUP BY ?name ?level"""
+        result = self._query(query_string)
+        for row in result:
+            return {"product_name": str(row.name), "level": str(row.level).split("#")[-1]}
+        return None
 
-    def LisuDeviceAttributes(self) -> Any:
-        """Query detailed device attributes (channels, bytes, scales)."""
-        graph = Graph()
-        graph.parse(ONTOLOGY_ADDRESS)
+    def get_device_attributes(self) -> List[dict]:
+        """Get detailed device attributes for a specific controller."""
+        if not self.vid or not self.pid:
+            return []
         query_string = f""" {self.header}
-SELECT ?controller ?name ?VID ?PID
+SELECT ?name
 ?x_channel ?x_byte1 ?x_byte2 ?x_scale
 ?y_channel ?y_byte1 ?y_byte2 ?y_scale
 ?z_channel ?z_byte1 ?z_byte2 ?z_scale
@@ -93,7 +97,7 @@ WHERE
     ?controller lisu:btn2_bit ?btn2_bit .
     FILTER(?VID = "{self.vid}" && ?PID="{self.pid}")
 }}
-GROUP BY ?controller ?name ?VID ?PID
+GROUP BY ?name
 ?x_channel ?x_byte1 ?x_byte2 ?x_scale
 ?y_channel ?y_byte1 ?y_byte2 ?y_scale
 ?z_channel ?z_byte1 ?z_byte2 ?z_scale
@@ -102,68 +106,47 @@ GROUP BY ?controller ?name ?VID ?PID
 ?yaw_channel ?yaw_byte1 ?yaw_byte2 ?yaw_scale
 ?btn1_channel ?btn1_byte ?btn1_bit
 ?btn2_channel ?btn2_byte ?btn2_bit"""
-        return graph.query(query_string)
+        result = self._query(query_string)
+        return [{"name": str(row.name), **{k: str(v) for k, v in row.asdict().items() if k != "name"}} for row in result]
 
-class UsrModsManager:
-    """Manages user mode macros for a controller."""
-    def __init__(self, controller_name: str):
-        self.controller_name = controller_name
-        self.header = """PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX owl: <http://www.w3.org/2002/07/owl#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX lisu: <https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#>"""
-
-    def GetAllUserModes(self) -> List[str]:
-        """Retrieve all user mode macros for the controller."""
-        graph = Graph()
-        graph.parse(ONTOLOGY_ADDRESS)
+    def get_user_modes(self) -> List[str]:
+        """Get all user mode macros for a specific controller."""
+        if not self.controller_name:
+            return []
         query_string = f""" {self.header}
-SELECT ?controller ?actions ?level ?macros ?name
+SELECT ?macros
 WHERE
 {{
     ?controller lisu:productName ?name .
     ?controller lisu:Executes ?actions .
-    ?controller lisu:isAppropriate ?level .
     ?actions lisu:macroName ?macros .
     FILTER(?name = "{self.controller_name}")
 }}
-GROUP BY ?controller ?actions ?macros ?name ?level"""
-        query = graph.query(query_string)
-        return [str(row.macros) for row in query]
+GROUP BY ?macros"""
+        result = self._query(query_string)
+        return [str(row.macros) for row in result]
 
-def ListAllUserModes() -> Any:
+def ListAllUserModes() -> List[dict]:
     """List all user modes across all controllers."""
-    graph = Graph()
-    graph.parse(ONTOLOGY_ADDRESS)
-    query_string = """
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX owl: <http://www.w3.org/2002/07/owl#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX lisu: <https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#>
-SELECT ?controller ?actions ?ctrname ?usrmod
+    ontology = LisuOntology()
+    query_string = f""" {ontology.header}
+SELECT ?ctrname ?usrmod
 WHERE
 {{
     ?controller lisu:productName ?ctrname .
     ?controller lisu:Executes ?actions .
     ?actions lisu:macroName ?usrmod .
 }}
-GROUP BY ?controller ?actions ?ctrname ?usrmod
+GROUP BY ?ctrname ?usrmod
 ORDER BY ?usrmod"""
-    return graph.query(query_string)
+    result = ontology._query(query_string)
+    return [{"ctrname": str(row.ctrname), "usrmod": str(row.usrmod)} for row in result]
 
-def ListAllDevices() -> Any:
+def ListAllDevices() -> List[dict]:
     """List all devices with basic attributes."""
-    graph = Graph()
-    graph.parse(ONTOLOGY_ADDRESS)
-    query_string = """
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX owl: <http://www.w3.org/2002/07/owl#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX lisu: <https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#>
-SELECT ?controller ?name ?VID ?PID ?level ?AXES ?BTNS ?HATS
+    ontology = LisuOntology()
+    query_string = f""" {ontology.header}
+SELECT ?name ?VID ?PID ?level ?AXES ?BTNS ?HATS
 WHERE
 {{
     ?controller lisu:productName ?name .
@@ -174,19 +157,17 @@ WHERE
     ?controller lisu:BTNS ?BTNS .
     ?controller lisu:HATS ?HATS .
 }}
-GROUP BY ?controller ?name ?VID ?PID ?level ?AXES ?BTNS ?HATS"""
-    return graph.query(query_string)
+GROUP BY ?name ?VID ?PID ?level ?AXES ?BTNS ?HATS"""
+    result = ontology._query(query_string)
+    return [{"name": str(row.name), "VID": str(row.VID), "PID": str(row.PID), 
+             "level": str(row.level).split("#")[-1], "AXES": str(row.AXES), 
+             "BTNS": str(row.BTNS), "HATS": str(row.HATS)} for row in result]
 
-def ListAllControllers() -> Any:
+def ListAllControllers() -> List[dict]:
     """List all controllers with detailed attributes."""
-    graph = Graph()
-    graph.parse(ONTOLOGY_ADDRESS)
-    query_string = """PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX owl: <http://www.w3.org/2002/07/owl#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX lisu: <https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#>
-SELECT ?controller ?name ?VID ?PID ?level ?AXES ?BTNS ?HATS
+    ontology = LisuOntology()
+    query_string = f""" {ontology.header}
+SELECT ?name ?VID ?PID ?level ?AXES ?BTNS ?HATS
 ?leftTriggerIdx ?rightTriggerIdx
 ?leftStickLRIdx ?leftStickUDIdx
 ?rightStickLRIdx ?rightStickUDIdx
@@ -225,7 +206,7 @@ WHERE
     ?controller lisu:circleBtnIdx ?circleBtnIdx .
     ?controller lisu:crossXBtnIdx ?crossXBtnIdx .
 }}
-GROUP BY ?controller ?name ?VID ?PID ?level ?AXES ?BTNS ?HATS
+GROUP BY ?name ?VID ?PID ?level ?AXES ?BTNS ?HATS
 ?leftTriggerIdx ?rightTriggerIdx
 ?leftStickLRIdx ?leftStickUDIdx
 ?rightStickLRIdx ?rightStickUDIdx
@@ -233,10 +214,12 @@ GROUP BY ?controller ?name ?VID ?PID ?level ?AXES ?BTNS ?HATS
 ?leftBtn2Idx ?rightBtn2Idx
 ?hatLeftIdx ?hatRightIdx ?hatUpIdx ?hatDownIdx ?hatIdx
 ?selectBtnIdx ?startBtnIdx ?triangleBtnIdx ?squareBtnIdx ?circleBtnIdx ?crossXBtnIdx"""
-    return graph.query(query_string)
+    result = ontology._query(query_string)
+    return [{k: str(v) for k, v in row.asdict().items()} for row in result]
 
 if __name__ == "__main__":
     # Example usage
-    ctrl = OntCtrl("054c", "09cc")  # Example VID/PID (PS4 controller)
-    for row in ctrl.ControllerAttributes():
-        print(f"Controller: {row.name}, Level: {row.level}")
+    ontology = LisuOntology(vid="054c", pid="09cc")  # PS4 controller example
+    attrs = ontology.get_controller_attributes()
+    if attrs:
+        print(f"Controller: {attrs['product_name']}, Level: {attrs['level']}")
