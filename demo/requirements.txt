@@ -1,0 +1,5 @@
+pywinusb>=0.4.2  # For HID device handling (Windows-specific)
+pygame>=2.5.2    # For gamepad input and mouse control
+mouse>=0.7.1     # For mouse control in LISU_mouse.py
+rdflib>=7.0.0    # For RDF ontology parsing in LISU_datasource.py
+qprompt>=0.3.0   # For interactive menus in test scripts
