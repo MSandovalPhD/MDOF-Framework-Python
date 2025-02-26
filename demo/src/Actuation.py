@@ -1,6 +1,8 @@
 import numpy as np
 import socket
+import json
 from typing import List, Optional
+from pathlib import Path
 from src.LISU.datasource import LisuOntology  # Adjust path for your structure
 
 class ActuationConfig:
@@ -14,21 +16,36 @@ class ActuationConfig:
         self.idx: int = 0
         self.idx2: int = 1
         self.count_state: int = 0
-        self.fun_array = self._load_instructions()  # Dynamic loading
+        self.fun_array = self._load_instructions()  # Dynamic loading from ontology or JSON
 
     def _load_instructions(self) -> List[str]:
-        """Load actuation commands dynamically from the ontology or configuration."""
+        """Load actuation commands dynamically from ontology or JSON configuration."""
+        # Try ontology first
         try:
             ontology = LisuOntology()
-            # Assume ontology has a method to fetch actuation commands (to be added in LisuOntology)
-            instructions = ontology.get_actuation_commands() or [
-                "addrotation %.3f %.3f %.3f %s",
-                "addrotationclip %.3f %.3f %.3f %s"
-            ]
-            return instructions
+            commands = ontology.get_actuation_commands()
+            if commands:
+                print("Loaded actuation commands from ontology")
+                return commands
         except Exception as e:
-            print(f"Failed to load actuation instructions: {e}")
-            return ["addrotation %.3f %.3f %.3f %s", "addrotationclip %.3f %.3f %.3f %s"]
+            print(f"Failed to load actuation commands from ontology: {e}")
+
+        # Fall back to JSON configuration
+        config_path = Path("./data/drishti_config.json")
+        try:
+            if config_path.exists():
+                with open(config_path, "r") as f:
+                    config = json.load(f)
+                    commands = config.get("actuation_commands", None)
+                    if commands:
+                        print("Loaded actuation commands from JSON configuration")
+                        return [str(cmd) for cmd in commands]
+        except Exception as e:
+            print(f"Failed to load actuation commands from JSON: {e}")
+
+        # Default fallback if both fail
+        print("Using default actuation commands")
+        return ["addrotation %.3f %.3f %.3f %s", "addrotationclip %.3f %.3f %.3f %s"]
 
 class Actuation:
     """Manages controller input and actuation commands for MDOF systems."""
