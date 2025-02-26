@@ -126,6 +126,20 @@ GROUP BY ?macros"""
         result = self._query(query_string)
         return [str(row.macros) for row in result]
 
+    def get_actuation_commands(self) -> Optional[List[str]]:
+        """Get actuation commands (e.g., for Drishti) from the ontology."""
+        query_string = f""" {self.header}
+SELECT ?command
+WHERE
+{{
+    ?actuation lisu:hasCommand ?command .
+    FILTER(regex(?command, "^addrotation|addrotationclip", "i"))  # Example filter for Drishti commands
+}}
+GROUP BY ?command"""
+        result = self._query(query_string)
+        commands = [str(row.command) for row in result]
+        return commands if commands else None
+
 def ListAllUserModes() -> List[dict]:
     """List all user modes across all controllers."""
     ontology = LisuOntology()
