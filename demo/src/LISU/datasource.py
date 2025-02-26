@@ -1,12 +1,21 @@
 from rdflib import Graph
-from typing import List, Any, Optional
+from rdflib.query import Result
+from typing import List, Any, Optional, Union
+from src.LISU.datalogging import recordLog  # For logging errors
 
 # Ontology file path (relative to script root)
 ONTOLOGY_ADDRESS = "./data/idoo.owl"
 
 class LisuOntology:
-    """Simplified interface for querying LISU ontology data."""
+    """Simplified interface for querying LISU ontology data. Uses a cached Graph for performance."""
     def __init__(self, vid: str = "", pid: str = "", controller_name: str = ""):
+        if vid and not all(c in '0123456789abcdefABCDEF' for c in vid):
+            raise ValueError("VID must be a hexadecimal string")
+        if pid and not all(c in '0123456789abcdefABCDEF' for c in pid):
+            raise ValueError("PID must be a hexadecimal string")
+        if controller_name and not isinstance(controller_name, str):
+            raise ValueError("controller_name must be a string")
+
         self.vid = vid
         self.pid = pid
         self.controller_name = controller_name
@@ -15,21 +24,30 @@ PREFIX owl: <http://www.w3.org/2002/07/owl#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX lisu: <https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#>"""
+        self._graph: Optional[Graph] = None  # Cache Graph instance
 
-    def _query(self, query_string: str) -> Any:
-        """Execute an RDF query on the ontology."""
-        graph = Graph()
+    def _query(self, query_string: str) -> Result:
+        """Execute an RDF query on the ontology, caching the Graph."""
+        if self._graph is None:
+            self._graph = Graph()
+            try:
+                self._graph.parse(ONTOLOGY_ADDRESS)
+            except FileNotFoundError:
+                recordLog(f"Ontology file not found at {ONTOLOGY_ADDRESS}")
+                return Result([])
+            except Exception as e:
+                recordLog(f"Failed to parse ontology: {e}")
+                self._graph = Graph()  # Fallback empty graph
         try:
-            graph.parse(ONTOLOGY_ADDRESS)
-            return graph.query(query_string)
+            return self._graph.query(query_string)
         except Exception as e:
-            print(f"Failed to query ontology: {e}")
-            return []
+            recordLog(f"Query error: {e}")
+            return Result([])
 
-    def get_controller_attributes(self) -> Optional[dict]:
+    def get_controller_attributes(self) -> dict:
         """Get basic attributes (name, level) for a specific controller."""
         if not self.vid or not self.pid:
-            return None
+            return {}
         query_string = f""" {self.header}
 SELECT ?name ?level
 WHERE
@@ -44,7 +62,7 @@ GROUP BY ?name ?level"""
         result = self._query(query_string)
         for row in result:
             return {"product_name": str(row.name), "level": str(row.level).split("#")[-1]}
-        return None
+        return {}
 
     def get_device_attributes(self) -> List[dict]:
         """Get detailed device attributes for a specific controller."""
@@ -126,8 +144,22 @@ GROUP BY ?macros"""
         result = self._query(query_string)
         return [str(row.macros) for row in result]
 
+    def get_actuation_commands(self) -> Optional[List[str]]:
+        """Get actuation commands (e.g., for Drishti) from the ontology."""
+        query_string = f""" {self.header}
+        SELECT ?command
+        WHERE
+        {{
+            ?actuation lisu:hasCommand ?command .
+            FILTER(regex(?command, "^addrotation|addrotationclip", "i"))  # Example filter for Drishti commands
+        }}
+        GROUP BY ?command"""
+        result = self._query(query_string)
+        commands = [str(row.command) for row in result]
+        return commands if commands else None
+
 def ListAllUserModes() -> List[dict]:
-    """List all user modes across all controllers."""
+    """List all user modes across all controllers in the ontology."""
     ontology = LisuOntology()
     query_string = f""" {ontology.header}
 SELECT ?ctrname ?usrmod
@@ -223,3 +255,11 @@ if __name__ == "__main__":
     attrs = ontology.get_controller_attributes()
     if attrs:
         print(f"Controller: {attrs['product_name']}, Level: {attrs['level']}")
+
+    devices = ontology.get_device_attributes()
+    if devices:
+        print("Devices:", devices)
+
+    modes = ontology.get_user_modes()
+    if modes:
+        print("User Modes:", modes)
