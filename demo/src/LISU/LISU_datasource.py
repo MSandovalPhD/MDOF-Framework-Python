@@ -2,7 +2,7 @@ from rdflib import Graph
 from typing import List, Any, Optional
 
 # Ontology file path (relative to script root)
-ONTOLOGY_ADDRESS = "./idoo.owl"
+ONTOLOGY_ADDRESS = "./data/idoo.owl"
 
 class LisuOntology:
     """Simplified interface for querying LISU ontology data."""
