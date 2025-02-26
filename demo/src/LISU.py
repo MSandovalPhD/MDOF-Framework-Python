@@ -3,12 +3,12 @@ from multiprocessing import Process, Queue
 from time import sleep
 from typing import List, Tuple, Optional
 
-from LISU_devices import LisuDevControllers
-from Controllers import Controllers
-from Actuation import (Actuation, xAxisChangeHandler, yAxisChangeHandler, zAxisChangeHandler,
-                      changeActuationHandler, subAngleHandler, circleBtnHandler, addAngleHandler,
-                      LisuProcesses)
+from src.LISU.devices import LisuDevControllers
+from src.controllers import Controllers
+from src.actuation import Actuation, xAxisChangeHandler, yAxisChangeHandler, zAxisChangeHandler, changeActuationHandler, subAngleHandler, circleBtnHandler, addAngleHandler, LisuProcesses
 import pygame
+
+from src.LISU.datasource import LisuOntology  # Add this import
 
 class LisuManager:
     """Manages LISU input devices and actuation for MDOF systems."""
@@ -16,11 +16,17 @@ class LisuManager:
         self.device_specs = {}
         self.active_device = None
         self.dev_name = ""
-        self.fun_array = ["addrotation %.3f %.3f %.3f %s", "addrotationclip %.3f %.3f %.3f %s"]
+        self.fun_array = self._load_actuation_commands()  # Load dynamic commands
         self.count_state = 0
         self.idx2 = 0
         self.idx3 = 1
-        self.actuation = Actuation()
+        self.actuation = Actuation()  # Pass fun_array if needed
+
+    def _load_actuation_commands(self) -> List[str]:
+        """Load actuation commands dynamically from the ontology."""
+        ontology = LisuOntology()
+        commands = ontology.get_actuation_commands()
+        return commands if commands else ["addrotation %.3f %.3f %.3f %s", "addrotationclip %.3f %.3f %.3f %s"]
 
     def list_devices(self) -> List[str]:
         """List all connected devices matching supported specs."""
@@ -46,13 +52,15 @@ class LisuManager:
                 lisudevname = "PS4 Controller"
             self.dev_name = lisudevname
 
+            # Pass fun_array to Actuation if needed
+            actuation = Actuation()  # Current implementation already loads dynamically
             joystick = Controllers(
                 initStatus, lisudevname,
-                xAxisChanged=lambda lr, ud: xAxisChangeHandler(lr, ud, self.actuation),
-                yAxisChanged=lambda lr, ud: yAxisChangeHandler(lr, ud, self.actuation),
-                zAxisChanged=lambda val: zAxisChangeHandler(val, self.actuation),
-                triangleBtnChanged=lambda val: changeActuationHandler(val, self.actuation),
-                squareBtnChanged=lambda val: subAngleHandler(val, self.actuation),
+                xAxisChanged=lambda lr, ud: xAxisChangeHandler(lr, ud, actuation),
+                yAxisChanged=lambda lr, ud: yAxisChangeHandler(lr, ud, actuation),
+                zAxisChanged=lambda val: zAxisChangeHandler(val, actuation),
+                triangleBtnChanged=lambda val: changeActuationHandler(val, actuation),
+                squareBtnChanged=lambda val: subAngleHandler(val, actuation),
                 circleBtnChanged=circleBtnHandler,
                 crossXBtnChanged=addAngleHandler,
                 FPS=20
