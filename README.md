@@ -1,20 +1,126 @@
 # Multiple Degrees-Of-Freedom Input Devices for Interactive Command and Control within Virtual Reality in Industrial Visualisations
 LISU (which stands for Layered Interaction System for User-Modes) is a framework developed for managing the raw input data from heterogeneous input devices. LISU offers a solution for VR (Virtual Reality) developers, creators, and designers to resolve interoperability and compatibility issues in VR applications caused by the heterogeneity of input controllers by unifying the roles of multiple code segments and APIs for input management.
 
-# Steps to reproduce
-1. Open your terminal (in my case, I used PowerShell), and execute conda activate "NAME_OF_YOUR_ENVIRONMENT". 
-2. Go to your root folder (or where you have downloaded the root folder "demo (version 3_0)".
-3. Run the test file included, e.g., python .\Test_LisuGamepad.py (note: check that your device is in the ontology that is included in the folder Data/idoo.owl)
+## Features
 
-In addition:
-To run Vrpn:
-1. Run vrpn_server.exe from the Vrpn folder
-2. Run the test file included in the folder "demo (version 3_0)", e.g., Test_VrpnGamepad.py
+- Controller management for gamepads and 3D input devices (e.g., PS4, SpaceMouse).
+- Actuation logic for MDOF system interaction via UDP.
+- Parallel processing of multiple input devices.
+- Integration with VRPN for networked device communication.
+- Ontology-based device configuration using RDF (`idoo.owl`).
+- Comprehensive testing and profiling tools.
 
-Note:
-- All the work was conducted on a PC within Windows 10 Pro, Dell Optiplex 7010, with an Intel Core i7-3770S processor, clocked at 3.10 GHz. 
-- The padlock mechanism CT datasets were provided by the Manchester X-ray Imaging Facility (http://www.mxif.manchester.ac.uk/). 
-- The Ketton carbonate core CT datasets were obtained from the British Geological Survey (BGS) database (https://metadata.bgs.ac.uk/geonetwork/srv/api/records/7315b790-333e-4e5b-e054-002128a47908/).
-- The Submillimetre mechanistic designs of termite-built structures CT datasets were obtained from Zenodo database (https://zenodo.org/record/4792633).
-- Programming was done in Python (v.3.3), linking to the API of ANU Drishti version 2.6.4, compiled on Windows 10 using Qt 5.4.1 and libQGLViewer 2.6.1. 
-- Controller setups were selected to be cross-evaluated; an Oculus Go Standalone Virtual Reality Headset - 32 GB, a SpeedLink SL-6638 Phantom Hawk Flightstick joystick, a Worthington Sharpe's Wing V.2, a Microsoft Xbox 360 controller, a Sony PS4 DualShock 4 V2 Wireless Controller, a custom setup consisting of a Keyboard + Mouse, and two 3DConnexion SpaceNavigators. 
+## Installation
+
+### Prerequisites
+
+- Python 3.7 or higher
+- Windows (for `pywinusb` and VRPN executables)
+
+### Steps
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/MSandovalPhD/MDOF-Framework-Python.git
+   cd MDOF-Framework-Python
+   ```
+
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Ensure the VRPN executables (`vrpnLisu_device_0.exe`, `vrpnLisu_device_1.exe`) are in the `demo/bin/` directory.
+
+4. Verify the ontology file (`idoo.owl`) is in the `demo/data/` directory.
+
+## Usage
+
+### Running the Framework
+
+1. Navigate to the `demo/` directory:
+   ```bash
+   cd demo
+   ```
+
+2. Run test scripts from the `tests/` directory to activate controllers or test functionality:
+   ```bash
+   python tests/Test_LisuGamepad.py    # Test a single gamepad
+   python tests/Test_LisuParallel.py   # Test multiple controllers in parallel
+   python tests/Test_3DInputDevice.py  # Test a 3D input device
+   python tests/Test_VrpnGamepad.py    # Test VRPN gamepad
+   python tests/Test_VrpnParallel.py   # Test VRPN parallel devices
+   ```
+
+3. Use the main LISU module for custom device activation:
+   ```python
+   from src.LISU import LisuManager
+   lisu = LisuManager()
+   lisu.start_gamepad(0x054c, 0x09cc)  # Example for PS4 controller (VID/PID)
+   ```
+
+### VRPN Executables
+
+Ensure `vrpnLisu_device_0.exe` and `vrpnLisu_device_1.exe` are in `demo/bin/`. If not available, build them using VRPN source code or contact the project author for distribution. Run these executables directly or via the test scripts for networked device interaction.
+
+### Profiling
+
+Each test script generates profiling stats in `demo/logs/Profiler_<ScriptName>_<Timestamp>.txt`. Review these files for performance insights.
+
+## Directory Structure
+
+```
+MDOF-Framework-Python/
+├── demo/                       # Main project directory
+│   ├── bin/                    # VRPN executables
+│   │   ├── vrpnLisu_device_0.exe
+│   │   └── vrpnLisu_device_1.exe
+│   ├── data/                   # Data files (e.g., ontology)
+│   │   └── idoo.owl
+│   ├── logs/                   # Log and profiler output (generated at runtime)
+│   ├── src/                    # Source code
+│   │   ├── __init__.py
+│   │   ├── actuation.py
+│   │   ├── controllers.py
+│   │   ├── lisu/               # LISU-specific modules
+│   │   │   ├── __init__.py
+│   │   │   ├── datalogging.py
+│   │   │   ├── datasource.py
+│   │   │   ├── devices.py
+│   │   │   ├── getcontrollers.py
+│   │   │   └── mouse.py
+│   │   └── lisu.py
+│   ├── tests/                  # Test scripts
+│   │   ├── __init__.py
+│   │   ├── test_3dinputdevice.py
+│   │   ├── test_lisugamepad.py
+│   │   ├── test_lisuparallel.py
+│   │   ├── test_vrpngamepad.py
+│   │   └── test_vrpnparallel.py
+├── requirements.txt            # Project dependencies
+└── setup.py                    # Setup script for packaging/distribution
+└── README.md                   # Project overview
+```
+
+## Dependencies
+
+List of required Python packages (see `requirements.txt`):
+- `pywinusb` (for HID device handling)
+- `pygame` (for gamepad input)
+- `mouse` (for mouse control)
+- `rdflib` (for ontology parsing)
+- `qprompt` (for interactive menus)
+
+## License
+
+MIT License (specify if applicable, or update with your preferred license).
+
+## Contributing
+
+Contributions are welcome! Please fork the repository, make changes, and submit pull requests. For major changes, please open an issue first to discuss.
+
+## Contact
+
+Mario Sandoval - mariosandovalac@gmail.com
+
+Project Link: [MDOF-Framework-Python](https://github.com/MSandovalPhD/MDOF-Framework-Python)
