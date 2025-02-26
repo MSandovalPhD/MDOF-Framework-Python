@@ -1,11 +1,34 @@
-import os
-import sys
-import time
 import logging
+from datetime import datetime
+from typing import Any
 
-timestr2 = time.strftime("%Y%m%d-%H%M%S")
+class LisuLogger:
+    """Handles logging of LISU events to a timestamped file."""
+    def __init__(self, log_dir: str = "."):
+        """Initialize logger with a timestamped file."""
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        log_file = f"{log_dir}/LISU_{timestamp}.txt"
+        logging.basicConfig(
+            filename=log_file,
+            level=logging.DEBUG,
+            format='%(asctime)s, %(message)s'
+        )
+        self.logger = logging.getLogger("LisuLogger")
 
-logging.basicConfig(filename=("LISU_" + timestr2 + ".txt"), level=logging.DEBUG, format='%(asctime)s, %(message)s')
+    def record_log(self, message: Any) -> None:
+        """Log a message to the file."""
+        try:
+            self.logger.info(str(message))
+        except Exception as e:
+            print(f"Failed to log message: {e}")
 
-def recordLog(message):
-    logging.info(message)
+# Singleton instance for convenience
+logger = LisuLogger()
+
+def recordLog(message: Any) -> None:
+    """Global function to record a log message."""
+    logger.record_log(message)
+
+if __name__ == "__main__":
+    # Example usage
+    recordLog("Test log entry")
