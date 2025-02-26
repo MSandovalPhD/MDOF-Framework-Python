@@ -1,48 +1,46 @@
 """
-LISU 2022. This program activates a 3D specialised input device from the input controllers detected.
+LISU 2022: Activates a 3D specialized input device from detected controllers.
 """
 
 import qprompt
-from LISU import *
+from LISU import LisuManager
+from LISU_getcontrollers import LisuControllers
+from typing import Optional
 
-###########################
-def testLisu():
-    # first be kind with local encodings
-    import sys
-    if sys.version_info >= (3,):
-        # as is, don't handle unicodes
-        unicode = str
-        raw_input = input
-    else:
-        # allow to show encoded strings
-        import codecs
-        sys.stdout = codecs.getwriter('mbcs')(sys.stdout)
-
+def test_lisu() -> None:
+    """Test and activate a 3D input device from detected controllers."""
     qprompt.clear()
     print("LISU API")
     print("Configuring controllers...")
-    print("Press any (system keyboard) key to stop...")
-    CONTROLLERS_DETECTED = LisuControllers.LisuListDevices()
-    _3DINPUT = GetFromList3DInput(CONTROLLERS_DETECTED)
-    LisuGamepadStart2(_3DINPUT)
+    print("Press any key (system keyboard) to stop...")
+
+    # Detect controllers
+    controllers_detected = LisuControllers.LisuListDevices()
+    if not controllers_detected:
+        print("No controllers detected.")
+        qprompt.ask_yesno(default="y")
+        return
+
+    # Initialize LISU manager and start 3D input
+    lisu = LisuManager()
+    vid, pid = controllers_detected[0]  # Use first detected device
+    lisu.start_3d_input(vid, pid)
     qprompt.ask_yesno(default="y")
     qprompt.clear()
 
-
-###########################
-if __name__ == '__main__':
+if __name__ == "__main__":
     qprompt.clear()
     menu = qprompt.Menu()
     qprompt.echo("LISU (Library for Interactive Settings and Users-modes) 2022")
-    qprompt.echo('LISU automatically configures and activates a 3D specialised input device from the input controllers detected.')
-    qprompt.echo('Instructions:')
-    qprompt.echo('1. Press the button "Run" to run LISU.')
-    qprompt.echo('2. Press your input controller button to change between functions.')
-    qprompt.echo('3. Press the "Exit" button to exit.')
-    menu.add("s", "Start!", testLisu)
-    menu.add("q", "quit")
+    qprompt.echo("LISU automatically configures and activates a 3D specialized input device.")
+    qprompt.echo("Instructions:")
+    qprompt.echo("1. Press 's' to run LISU.")
+    qprompt.echo("2. Press your input controller button to change functions.")
+    qprompt.echo("3. Press 'q' to exit.")
+    menu.add("s", "Start!", test_lisu)
+    menu.add("q", "Quit")
 
-    while "q" != menu.show():
+    while menu.show() != "q":
         pass
 
     qprompt.clear()
