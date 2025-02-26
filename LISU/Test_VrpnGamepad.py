@@ -1,29 +1,48 @@
-import os
-import sys
-import time
-import subprocess
-import cProfile, pstats, io
+"""
+Runs and profiles the vrpnLisu gamepad executable.
+"""
 
-###########################
-if __name__ == '__main__':
-    timestr = time.strftime("%Y%m%d-%H%M%S")
-    pr = cProfile.Profile()
-    pr.enable()
+import os
+import subprocess
+import cProfile
+import pstats
+import io
+from datetime import datetime
+from typing import Optional
+
+if __name__ == "__main__":
+    # Setup profiler
+    profiler = cProfile.Profile()
+    profiler.enable()
+
+    # Define executable path (relative to script directory)
+    executable = "vrpnLisu_Microsoft.exe"  # Adjust if needed
 
     try:
-        #proc  = subprocess.Popen(["C:/Users/mso_2/OneDrive - The University of Manchester/Desktop/Genearted From PC/VR Test/vrpnLisu.v.2.exe"], stdout=subprocess.PIPE)
-        proc  = subprocess.Popen(["vrpnLisu_Microsoft.exe"], stdout=subprocess.PIPE)
-        for line in proc.stdout:
+        # Run the VRPN executable and capture output
+        process = subprocess.Popen([executable], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in process.stdout:
             print(line.decode("utf-8").strip())
+        process.wait()  # Ensure process completes
 
+    except FileNotFoundError:
+        print(f"Error: Could not find executable '{executable}'")
     except KeyboardInterrupt:
-        proc.kill()
-        print("Got Keyboard interrupt")
+        process.kill()
+        print("Stopped by keyboard interrupt")
+    except Exception as e:
+        print(f"Error running executable: {e}")
+        if 'process' in locals():
+            process.kill()
 
-    pr.disable()
-    s = io.StringIO()
-    ps = pstats.Stats(pr, stream=s).sort_stats('tottime')
-    ps.print_stats()
+    # Save profiler stats
+    profiler.disable()
+    stats_stream = io.StringIO()
+    stats = pstats.Stats(profiler, stream=stats_stream).sort_stats('tottime')
+    stats.print_stats()
 
-    with open('Logs/Profiler_VrpnGamepad_'+ timestr + '.txt', 'w+') as f:
-        f.write(s.getvalue())
+    timestr = datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = "Logs"
+    os.makedirs(log_dir, exist_ok=True)  # Ensure Logs directory exists
+    with open(f"{log_dir}/Profiler_VrpnGamepad_{timestr}.txt", "w") as f:
+        f.write(stats_stream.getvalue())
