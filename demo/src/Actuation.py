@@ -1,6 +1,7 @@
 import numpy as np
 import socket
-from typing import List
+from typing import List, Optional
+from src.LISU.datasource import LisuOntology  # Adjust path for your structure
 
 class ActuationConfig:
     def __init__(self):
@@ -13,7 +14,21 @@ class ActuationConfig:
         self.idx: int = 0
         self.idx2: int = 1
         self.count_state: int = 0
-        self.fun_array = ["addrotation %.3f %.3f %.3f %s", "addrotationclip %.3f %.3f %.3f %s"]
+        self.fun_array = self._load_instructions()  # Dynamic loading
+
+    def _load_instructions(self) -> List[str]:
+        """Load actuation commands dynamically from the ontology or configuration."""
+        try:
+            ontology = LisuOntology()
+            # Assume ontology has a method to fetch actuation commands (to be added in LisuOntology)
+            instructions = ontology.get_actuation_commands() or [
+                "addrotation %.3f %.3f %.3f %s",
+                "addrotationclip %.3f %.3f %.3f %s"
+            ]
+            return instructions
+        except Exception as e:
+            print(f"Failed to load actuation instructions: {e}")
+            return ["addrotation %.3f %.3f %.3f %s", "addrotationclip %.3f %.3f %.3f %s"]
 
 class Actuation:
     """Manages controller input and actuation commands for MDOF systems."""
@@ -36,7 +51,9 @@ class Actuation:
     def _send_command(self, vec_input: List[float], dev_name: str) -> None:
         """Send actuation command via UDP."""
         self.config.count_state += 1
-        if self.config.count_state >= 2:
+        if self.config.count_state >= 2 and self.config.fun_array:
+            if self.config.idx >= len(self.config.fun_array):
+                self.config.idx = 0  # Fallback if index exceeds available commands
             message = self.config.fun_array[self.config.idx] % (
                 -vec_input[0], -vec_input[1], vec_input[2], str(self.config.idx2)
             )
@@ -50,9 +67,12 @@ class Actuation:
     def change_actuation(self, val: int) -> None:
         """Handle actuation mode toggle."""
         if val == 1:
-            self.config.idx = (self.config.idx + 1) % 2
-            fun_name = self.config.fun_array[self.config.idx].split(" ")[0]
-            print(f"Button pressed for {fun_name}")
+            self.config.idx = (self.config.idx + 1) % len(self.config.fun_array)
+            if self.config.fun_array:
+                fun_name = self.config.fun_array[self.config.idx].split(" ")[0]
+                print(f"Button pressed for {fun_name}")
+            else:
+                print("No actuation commands available")
 
     def adjust_sensitivity(self, val: int) -> None:
         """Adjust sensitivity parameter."""
@@ -76,7 +96,7 @@ class Actuation:
         scaled = normalized * ((magnitude - deadzone) / (1 - deadzone))
         return scaled
 
-# Callback functions for external use
+# Callback functions for external use (unchanged, but ensure they work with dynamic fun_array)
 def xAxisChangeHandler(valLR: float, valUD: float, actuation: 'Actuation') -> None:
     actuation.config.x = valLR + valUD
 
