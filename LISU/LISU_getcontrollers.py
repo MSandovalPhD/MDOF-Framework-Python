@@ -1,26 +1,34 @@
 """
-Handling getting controllers
+Handles retrieval of connected HID controllers.
 """
 
-from time import sleep
-from msvcrt import kbhit
-
 import pywinusb.hid as hid
+from typing import List, Tuple
 
 class LisuControllers:
+    """Manages listing of connected HID controllers."""
 
-    def LisuListDevices():
-        listVID = []
-        listPID = []
+    @staticmethod
+    def LisuListDevices() -> List[Tuple[int, int]]:
+        """
+        List all connected HID devices by their VID and PID.
 
-        all_hids = hid.find_all_hid_devices()
-        if all_hids:
-            while True:
-                for index, device in enumerate(all_hids):
-                    listVID.append(device.vendor_id)
-                    listPID.append(device.product_id)
-                break;
-            else:
-                print("There's not any non system HID class device available")
+        Returns:
+            List of tuples containing (vendor_id, product_id) for each HID device.
+            Empty list if no devices are found.
+        """
+        try:
+            all_hids = hid.find_all_hid_devices()
+            if not all_hids:
+                print("No non-system HID class devices available")
+                return []
+            return [(device.vendor_id, device.product_id) for device in all_hids]
+        except Exception as e:
+            print(f"Error listing HID devices: {e}")
+            return []
 
-        return list(zip(listVID, listPID))
+if __name__ == "__main__":
+    # Example usage
+    devices = LisuControllers.LisuListDevices()
+    for vid, pid in devices:
+        print(f"VID: {hex(vid)}, PID: {hex(pid)}")
