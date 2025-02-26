@@ -1,0 +1,7 @@
+{
+  "actuation_commands": [
+    "addrotation %.3f %.3f %.3f %s",
+    "addrotationclip %.3f %.3f %.3f %s",
+    "newcommand %.3f %.3f %.3f %s"
+  ]
+}
