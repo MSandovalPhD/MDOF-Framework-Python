@@ -1,283 +1,160 @@
-"""
-Handling raw data inputs example
-"""
 from time import sleep
 import pywinusb.hid as hid
 from collections import namedtuple
-import timeit
-import copy
-from pywinusb.hid import usage_pages, helpers, winapi
+from typing import Dict, List, Tuple, Optional, Callable
+from timeit import default_timer as high_acc_clock
 
-from LISU_datasource import *
+from LISU_datasource import OntCtrl  # Adjusted for simplified LISU_datasource.py
 
-# current version number
 __version__ = "0.3.1"
 
-# clock for timing
-high_acc_clock = timeit.default_timer
-
+# HID usage constants
 GENERIC_PAGE = 0x1
 BUTTON_PAGE = 0x9
 LED_PAGE = 0x8
-MULTI_AXIS_CONTROLLER_CAP = 0x8
+HID_AXIS_MAP = {0x30: "x", 0x31: "y", 0x32: "z", 0x33: "roll", 0x34: "pitch", 0x35: "yaw"}
 
-HID_AXIS_MAP = {
-    0x30: "x",
-    0x31: "y",
-    0x32: "z",
-    0x33: "roll",
-    0x34: "pitch",
-    0x35: "yaw",
-}
-
-import pprint
-
+# Named tuples for specs and state
 AxisSpec = namedtuple("AxisSpec", ["channel", "byte1", "byte2", "scale"])
 ButtonSpec = namedtuple("ButtonSpec", ["channel", "byte", "bit"])
+LisuDevice = namedtuple("LisuDevice", ["t", "x", "y", "z", "roll", "pitch", "yaw", "buttons"])
 
-def to_int16(y1, y2):
+def to_int16(y1: int, y2: int) -> int:
+    """Convert two bytes to a signed 16-bit integer."""
     x = (y1) | (y2 << 8)
-    if x >= 32768:
-        x = -(65536 - x)
-    return x
-
-# tuple for 6DOF results
-LisuDevice = namedtuple(
-    "LisuDevice", ["t", "x", "y", "z", "roll", "pitch", "yaw", "buttons"]
-)
-
-class LisuDictionary(object):
-    def __init__(self, name, device_specs):
-        self.name = name
-        self.device_specs = device_specs
-
-class LisuMappings(object):
-    def __init__(self, x, y, z, pitch, yaw, raw):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.pitch = pitch
-        self.roll = roll
-        self.yaw = yaw
-
-class LisuControllersManager:
-    def __init__(self, ctr_ont):
-        self.name = ctr_ont.name
-        self.x_channel = int(ctr_ont.x_channel)
-        self.x_byte1 = int(ctr_ont.x_byte1)
-        self.x_byte2 = int(ctr_ont.x_byte2)
-        self.x_scale = int(ctr_ont.x_scale)
-        self.y_channel = int(ctr_ont.y_channel)
-        self.y_byte1 = int(ctr_ont.y_byte1)
-        self.y_byte2 = int(ctr_ont.y_byte2)
-        self.y_scale = int(ctr_ont.y_scale)
-        self.z_channel = int(ctr_ont.z_channel)
-        self.z_byte1 = int(ctr_ont.z_byte1)
-        self.z_byte2 = int(ctr_ont.z_byte2)
-        self.z_scale = int(ctr_ont.z_scale)
-        self.pitch_channel = int(ctr_ont.pitch_channel)
-        self.pitch_byte1 = int(ctr_ont.pitch_byte1)
-        self.pitch_byte2 = int(ctr_ont.pitch_byte2)
-        self.pitch_scale = int(ctr_ont.pitch_scale)
-        self.roll_channel = int(ctr_ont.roll_channel)
-        self.roll_byte1 = int(ctr_ont.roll_byte1)
-        self.roll_byte2 = int(ctr_ont.roll_byte2)
-        self.roll_scale = int(ctr_ont.roll_scale)
-        self.yaw_channel = int(ctr_ont.yaw_channel)
-        self.yaw_byte1 = int(ctr_ont.yaw_byte1)
-        self.yaw_byte2 = int(ctr_ont.yaw_byte2)
-        self.yaw_scale = int(ctr_ont.yaw_scale)
-        self.btn1_channel = int(ctr_ont.btn1_channel)
-        self.btn1_byte = int(ctr_ont.btn1_byte)
-        self.btn1_bit = int(ctr_ont.btn1_bit)
-        self.btn2_channel = int(ctr_ont.btn2_channel)
-        self.btn2_byte = int(ctr_ont.btn2_byte)
-        self.btn2_bit = int(ctr_ont.btn2_bit)
-
-class LisuDevControllers:
-    #Data for supported controllers
-    def __init__(self, vid_id, pid_id):
-        ctr_ont = []        
-        oOntCtrl = OntCtrl(hex(vid_id), hex(pid_id))
-        retr_ont = oOntCtrl.LisuDeviceAttributes()
-        for row in retr_ont:
-            ctr_ont.append(LisuControllersManager(row))
-
-        _dict_devices = {}
-        _mappings = {}
-        _button_mapping = []
-        #Filling Tuples
-        num_devices = len(ctr_ont)
-        for ctr_idx in range(num_devices):
-            _mappings["x"] = AxisSpec(channel = ctr_ont[ctr_idx].x_channel, byte1 = ctr_ont[ctr_idx].x_byte1, byte2 = ctr_ont[ctr_idx].x_byte2, scale = ctr_ont[ctr_idx].x_scale)
-            _mappings["y"] = AxisSpec(channel = ctr_ont[ctr_idx].y_channel, byte1 = ctr_ont[ctr_idx].y_byte1, byte2 = ctr_ont[ctr_idx].y_byte2, scale = ctr_ont[ctr_idx].y_scale)
-            _mappings["z"] = AxisSpec(channel = ctr_ont[ctr_idx].z_channel, byte1 = ctr_ont[ctr_idx].z_byte1, byte2 = ctr_ont[ctr_idx].z_byte2, scale = ctr_ont[ctr_idx].z_scale)
-            _mappings["pitch"] = AxisSpec(channel = ctr_ont[ctr_idx].pitch_channel, byte1 = ctr_ont[ctr_idx].pitch_byte1, byte2 = ctr_ont[ctr_idx].pitch_byte2, scale = ctr_ont[ctr_idx].pitch_scale)
-            _mappings["roll"] = AxisSpec(channel = ctr_ont[ctr_idx].roll_channel, byte1 = ctr_ont[ctr_idx].roll_byte1, byte2 = ctr_ont[ctr_idx].roll_byte2, scale = ctr_ont[ctr_idx].roll_scale)
-            _mappings["yaw"] = AxisSpec(channel = ctr_ont[ctr_idx].yaw_channel, byte1 = ctr_ont[ctr_idx].yaw_byte1, byte2 = ctr_ont[ctr_idx].yaw_byte2, scale = ctr_ont[ctr_idx].yaw_scale)
-            _button_mapping.append(ButtonSpec(channel = ctr_ont[ctr_idx].btn1_channel, byte = ctr_ont[ctr_idx].btn1_byte, bit = ctr_ont[ctr_idx].btn1_bit))
-            _button_mapping.append(ButtonSpec(channel = ctr_ont[ctr_idx].btn2_channel, byte = ctr_ont[ctr_idx].btn2_byte, bit = ctr_ont[ctr_idx].btn2_bit))
-            _dict_devices [ctr_ont[ctr_idx].name] = DeviceSpec(
-                                                    name = ctr_ont[ctr_idx].name,
-                                                    hid_id = [vid_id, pid_id],
-                                                    led_id=[0x8, 0x4B],
-                                                    mappings = _mappings,
-                                                    button_mapping = _button_mapping
-                                                    )
-        self.dict_devices = _dict_devices
+    return x - 65536 if x >= 32768 else x
 
 class ButtonState(list):
-    def __int__(self):
-        return sum((b << i) for (i, b) in enumerate(reversed(self)))
+    """List subclass representing button states as an integer."""
+    def __int__(self) -> int:
+        return sum(b << i for i, b in enumerate(reversed(self)))
 
-class DeviceSpec(object):
-    """Holds the specification of a single input device supported by the ontology"""
+class LisuDevControllers:
+    """Manages device specifications from ontology data."""
+    def __init__(self, vid_id: int, pid_id: int):
+        """Initialize with VID/PID and fetch device specs from ontology."""
+        self.dict_devices: Dict[str, 'DeviceSpec'] = {}
+        ontology = OntCtrl(hex(vid_id), hex(pid_id))
+        devices = ontology.get_device_attributes()  # Assumes simplified LISU_datasource.py
+        
+        for dev in devices:
+            mappings = {
+                "x": AxisSpec(int(dev["x_channel"]), int(dev["x_byte1"]), int(dev["x_byte2"]), int(dev["x_scale"])),
+                "y": AxisSpec(int(dev["y_channel"]), int(dev["y_byte1"]), int(dev["y_byte2"]), int(dev["y_scale"])),
+                "z": AxisSpec(int(dev["z_channel"]), int(dev["z_byte1"]), int(dev["z_byte2"]), int(dev["z_scale"])),
+                "pitch": AxisSpec(int(dev["pitch_channel"]), int(dev["pitch_byte1"]), int(dev["pitch_byte2"]), int(dev["pitch_scale"])),
+                "roll": AxisSpec(int(dev["roll_channel"]), int(dev["roll_byte1"]), int(dev["roll_byte2"]), int(dev["roll_scale"])),
+                "yaw": AxisSpec(int(dev["yaw_channel"]), int(dev["yaw_byte1"]), int(dev["yaw_byte2"]), int(dev["yaw_scale"])),
+            }
+            button_mapping = [
+                ButtonSpec(int(dev["btn1_channel"]), int(dev["btn1_byte"]), int(dev["btn1_bit"])),
+                ButtonSpec(int(dev["btn2_channel"]), int(dev["btn2_byte"]), int(dev["btn2_bit"]))
+            ]
+            self.dict_devices[dev["name"]] = DeviceSpec(
+                name=dev["name"],
+                hid_id=[vid_id, pid_id],
+                led_id=[LED_PAGE, 0x4B],
+                mappings=mappings,
+                button_mapping=button_mapping
+            )
 
+class DeviceSpec:
+    """Represents a single HID input device with 6DOF state."""
     def __init__(
-        self, name, hid_id, led_id, mappings, button_mapping, axis_scale=350.0
+        self,
+        name: str,
+        hid_id: List[int],
+        led_id: List[int],
+        mappings: Dict[str, AxisSpec],
+        button_mapping: List[ButtonSpec],
+        axis_scale: float = 350.0
     ):
+        """Initialize device specification."""
         self.name = name
         self.hid_id = hid_id
         self.led_id = led_id
         self.mappings = mappings
         self.button_mapping = button_mapping
         self.axis_scale = axis_scale
-
         self.led_usage = hid.get_full_usage_id(led_id[0], led_id[1])
-        # initialise to a vector of 0s for each state
+
+        # Initial state
         self.dict_state = {
-            "t": -1,
-            "x": 0,
-            "y": 0,
-            "z": 0,
-            "roll": 0,
-            "pitch": 0,
-            "yaw": 0,
-            "buttons": ButtonState([0] * len(self.button_mapping)),
+            "t": -1.0, "x": 0.0, "y": 0.0, "z": 0.0,
+            "roll": 0.0, "pitch": 0.0, "yaw": 0.0,
+            "buttons": ButtonState([0] * len(button_mapping))
         }
         self.tuple_state = LisuDevice(**self.dict_state)
-
-        # start in disconnected state
-        self.device = None
-        self.callback = None
-        self.button_callback = None
-
-    def describe_connection(self):
-        """Return string representation of the device, including
-        the connection state"""
-        if self.device == None:
-            return "%s [disconnected]" % (self.name)
-        else:
-            return "%s connected to %s %s version: %s [serial: %s]" % (
-                self.name,
-                self.vendor_name,
-                self.product_name,
-                self.version_number,
-                self.serial_number,
-            )
+        
+        # Device connection and callbacks
+        self.device: Optional[hid.HidDevice] = None
+        self.callback: Optional[Callable[[LisuDevice], None]] = None
+        self.button_callback: Optional[Callable[[LisuDevice, ButtonState], None]] = None
 
     @property
-    def connected(self):
-        """True if the device has been connected"""
+    def connected(self) -> bool:
+        """Check if the device is connected."""
         return self.device is not None
 
-    @property
-    def state(self):
-        """Return the current value of read()
-        Returns: state: {t,x,y,z,pitch,yaw,roll,button} namedtuple
-                None if the device is not open.
-        """
-        return self.read()
-
-    def open(self):
-        """Open a connection to the device, if possible"""
+    def open(self) -> None:
+        """Open a connection to the device."""
         if self.device:
             self.device.open()
-        # copy in product details
-        self.product_name = self.device.product_name
-        self.vendor_name = self.device.vendor_name
-        self.version_number = self.device.version_number
-        # doesn't seem to work on 3dconnexion devices...
-        # serial number will be a byte string, we convert to a hex id
-        self.serial_number = "".join(
-            ["%02X" % ord(char) for char in self.device.serial_number]
-        )
+            self.product_name = self.device.product_name
+            self.vendor_name = self.device.vendor_name
+            self.version_number = self.device.version_number
+            self.serial_number = "".join(f"{ord(char):02X}" for char in self.device.serial_number or "")
 
-    def set_led(self, state):
-        """Set the LED state to state (True or False)"""
-        if self.connected:
-            reports = self.device.find_output_reports()
-            for report in reports:
-                if self.led_usage in report:
-                    report[self.led_usage] = state
-                    report.send()
-
-    def close(self):
-        """Close the connection, if it is open"""
+    def close(self) -> None:
+        """Close the device connection."""
         if self.connected:
             self.device.close()
             self.device = None
 
-    def read(self):
-        """Return the current state of this navigation controller.
-        Returns:
-            state: {t,x,y,z,pitch,yaw,roll,button} namedtuple
-            None if the device is not open.
-        """
+    def set_led(self, state: bool) -> None:
+        """Set the LED state."""
         if self.connected:
-            return self.tuple_state
-        else:
-            return None
+            for report in self.device.find_output_reports():
+                if self.led_usage in report:
+                    report[self.led_usage] = state
+                    report.send()
 
-    def process(self, data):
-        """
-        Update the state based on the incoming data
-        This function updates the state of the DeviceSpec object, giving values for each
-        axis [x,y,z,roll,pitch,yaw] in range [-1.0, 1.0]
-        The state tuple is only set when all DOF have been read correctly.
-        The timestamp (in fractional seconds since the start of the program)  is written as element "t"
-        If callback is provided, it is called on with a copy of the current state tuple.
-        If button_callback is provided, it is called only on button state changes with the argument (state, button_state).
-        Parameters:
-            data    The data for this HID event, as returned by the HID callback
-        """
+    def read(self) -> Optional[LisuDevice]:
+        """Return the current state of the device."""
+        return self.tuple_state if self.connected else None
+
+    def process(self, data: List[int]) -> None:
+        """Update state from raw HID data and trigger callbacks."""
         button_changed = False
+        max_len_data = len(data)
 
-        #NEED TO TRACK LENGHT OF DATA AS SOME DEVICES MIGHT BE LONGER THAN OTHERS
+        for name, spec in self.mappings.items():
+            if data[0] == spec.channel and spec.byte1 < max_len_data and spec.byte2 < max_len_data:
+                self.dict_state[name] = to_int16(data[spec.byte1], data[spec.byte2]) / self.axis_scale
 
-        for name, (chan, b1, b2, flip) in self.mappings.items():
-
-
-            if data[0] == chan:
-
-                max_len_data = len(data)
-
-                if(int(b1) < max_len_data and int(b2) < max_len_data):
-                    self.dict_state[name] = (
-                        flip * to_int16(data[b1], data[b2]) / float(self.axis_scale)
-                    )
-
-
-
-        for button_index, (chan, byte, bit) in enumerate(self.button_mapping):
-            if data[0] == chan:
-                button_changed = True
-                # update the button vector
-                mask = 1 << bit
-                self.dict_state["buttons"][button_index] = (
-                    1 if (data[byte] & mask) != 0 else 0
-                )
+        for idx, spec in enumerate(self.button_mapping):
+            if data[0] == spec.channel and spec.byte < max_len_data:
+                mask = 1 << spec.bit
+                button_changed |= (self.dict_state["buttons"][idx] != (1 if data[spec.byte] & mask else 0))
+                self.dict_state["buttons"][idx] = 1 if data[spec.byte] & mask else 0
 
         self.dict_state["t"] = high_acc_clock()
+        self.tuple_state = LisuDevice(**self.dict_state)
 
-        # must receive both parts of the 6DOF state before we return the state dictionary
-        if len(self.dict_state) == 8:
-            self.tuple_state = LisuDevice(**self.dict_state)
-
-        # call any attached callbacks
         if self.callback:
             self.callback(self.tuple_state)
-
-        # only call the button callback if the button state actually changed
         if self.button_callback and button_changed:
             self.button_callback(self.tuple_state, self.tuple_state.buttons)
+
+    def describe_connection(self) -> str:
+        """Return a string describing the device connection status."""
+        if not self.connected:
+            return f"{self.name} [disconnected]"
+        return (f"{self.name} connected to {self.vendor_name} {self.product_name} "
+                f"version: {self.version_number} [serial: {self.serial_number}]")
+
+if __name__ == "__main__":
+    # Example usage
+    dev_mgr = LisuDevControllers(0x054c, 0x09cc)  # PS4 controller VID/PID
+    for name, spec in dev_mgr.dict_devices.items():
+        print(spec.describe_connection())
