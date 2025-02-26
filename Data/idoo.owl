@@ -1,0 +1,1703 @@
+<?xml version="1.0"?>
+
+
+<!DOCTYPE rdf:RDF [
+    <!ENTITY owl "http://www.w3.org/2002/07/owl#" >
+    <!ENTITY swrl "http://www.w3.org/2003/11/swrl#" >
+    <!ENTITY swrlb "http://www.w3.org/2003/11/swrlb#" >
+    <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
+    <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
+    <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+    <!ENTITY ComputerSystem_ODP "http://mklab.iti.gr/pericles/ComputerSystem_ODP#" >
+    <!ENTITY swrla "http://swrl.stanford.edu/ontologies/3.3/swrla.owl#" >
+    <!ENTITY idoo "https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#" >
+]>
+
+
+<rdf:RDF xmlns="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#"
+     xml:base="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:swrl="http://www.w3.org/2003/11/swrl#"
+     xmlns:idoo="https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:swrlb="http://www.w3.org/2003/11/swrlb#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:ComputerSystem_ODP="http://mklab.iti.gr/pericles/ComputerSystem_ODP#"
+     xmlns:swrla="http://swrl.stanford.edu/ontologies/3.3/swrla.owl#">
+    <owl:Ontology rdf:about="https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl">
+        <owl:versionInfo rdf:datatype="&xsd;decimal">1.0</owl:versionInfo>
+        <rdfs:comment>This is an Input Devices Oriented Ontology</rdfs:comment>
+        <owl:imports rdf:resource="http://mklab.iti.gr/pericles/ComputerSystem_ODP"/>
+        <owl:imports rdf:resource="http://www.ontologydesignpatterns.org/cp/owl/eventprocessing.owl"/>
+    </owl:Ontology>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Annotation properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://mklab.iti.gr/pericles/ComputerSystem_ODP#usesOperatingSystem -->
+
+    <owl:AnnotationProperty rdf:about="&ComputerSystem_ODP;usesOperatingSystem"/>
+    
+
+
+    <!-- http://swrl.stanford.edu/ontologies/3.3/swrla.owl#isRuleEnabled -->
+
+    <owl:AnnotationProperty rdf:about="&swrla;isRuleEnabled"/>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Object Properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Executes -->
+
+    <owl:ObjectProperty rdf:about="&idoo;Executes"/>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Uses -->
+
+    <owl:ObjectProperty rdf:about="&idoo;Uses"/>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#hasMacros -->
+
+    <owl:ObjectProperty rdf:about="&idoo;hasMacros">
+        <rdfs:domain rdf:resource="&idoo;Controllers"/>
+        <rdfs:range rdf:resource="&idoo;Macros"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#hasProperties -->
+
+    <owl:ObjectProperty rdf:about="&idoo;hasProperties">
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+        <rdfs:range rdf:resource="&idoo;Properties"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#isAppropriate -->
+
+    <owl:ObjectProperty rdf:about="&idoo;isAppropriate">
+        <rdfs:domain rdf:resource="&idoo;Controllers"/>
+        <rdfs:range rdf:resource="&idoo;Level"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#uses_VE -->
+
+    <owl:ObjectProperty rdf:about="&idoo;uses_VE">
+        <rdfs:subPropertyOf rdf:resource="&ComputerSystem_ODP;usesSoftware"/>
+        <rdfs:range rdf:resource="&idoo;VirtualEnviroment"/>
+    </owl:ObjectProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Data properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#BTNS -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;BTNS">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#DOF -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;DOF">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#HATS -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;HATS">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#PID -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;PID"/>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#VID -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;VID"/>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#btn1_bit -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;btn1_bit">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#btn1_byte -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;btn1_byte">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#btn1_channel -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;btn1_channel">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#btn2_bit -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;btn2_bit">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#btn2_byte -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;btn2_byte">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#btn2_channel -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;btn2_channel">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#circleBtnIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;circleBtnIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#crossXBtnIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;crossXBtnIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#hatDownIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;hatDownIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#hatIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;hatIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#hatLeftIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;hatLeftIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#hatRightIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;hatRightIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#hatUpIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;hatUpIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#leftBtn1Idx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;leftBtn1Idx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#leftBtn2Idx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;leftBtn2Idx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#leftStickLRIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;leftStickLRIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#leftStickUDIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;leftStickUDIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#leftTriggerIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;leftTriggerIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#macroName -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;macroName">
+        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdfs:domain rdf:resource="&idoo;Macros"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#pitch_byte1 -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;pitch_byte1">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#pitch_byte2 -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;pitch_byte2">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#pitch_channel -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;pitch_channel">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#pitch_scale -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;pitch_scale">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#productName -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;productName">
+        <rdfs:range rdf:resource="&xsd;string"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#rightBtn1Idx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;rightBtn1Idx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#rightBtn2Idx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;rightBtn2Idx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#rightStickLRIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;rightStickLRIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#rightStickUDIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;rightStickUDIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#rightTriggerIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;rightTriggerIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#roll_byte1 -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;roll_byte1">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#roll_byte2 -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;roll_byte2">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#roll_channel -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;roll_channel">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#roll_scale -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;roll_scale">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#selectBtnIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;selectBtnIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#squareBtnIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;squareBtnIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#startBtnIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;startBtnIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#triangleBtnIdx -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;triangleBtnIdx">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#x_byte1 -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;x_byte1">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#x_byte2 -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;x_byte2">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#x_channel -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;x_channel">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#x_scale -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;x_scale">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#y_byte1 -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;y_byte1">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#y_byte2 -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;y_byte2">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#y_channel -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;y_channel">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#y_scale -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;y_scale">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#yaw_byte1 -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;yaw_byte1">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#yaw_byte2 -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;yaw_byte2">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#yaw_channel -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;yaw_channel">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#yaw_scale -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;yaw_scale">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#z_byte1 -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;z_byte1">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#z_byte2 -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;z_byte2">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#z_channel -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;z_channel">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#z_scale -->
+
+    <owl:DatatypeProperty rdf:about="&idoo;z_scale">
+        <rdfs:range rdf:resource="&xsd;int"/>
+        <rdfs:domain rdf:resource="&idoo;Classification"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Classes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://mklab.iti.gr/pericles/ComputerSystem_ODP#Hardware -->
+
+    <owl:Class rdf:about="&ComputerSystem_ODP;Hardware"/>
+    
+
+
+    <!-- http://www.loa-cnr.it/ontologies/DUL.owl#Event -->
+
+    <owl:Class rdf:about="http://www.loa-cnr.it/ontologies/DUL.owl#Event"/>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Classification -->
+
+    <owl:Class rdf:about="&idoo;Classification">
+        <rdfs:subClassOf rdf:resource="&idoo;Controllers"/>
+    </owl:Class>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Controllers -->
+
+    <owl:Class rdf:about="&idoo;Controllers">
+        <rdfs:subClassOf rdf:resource="&ComputerSystem_ODP;Hardware"/>
+    </owl:Class>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#DOF -->
+
+    <owl:Class rdf:about="&idoo;DOF">
+        <rdfs:subClassOf rdf:resource="&idoo;Properties"/>
+    </owl:Class>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Expert -->
+
+    <owl:Class rdf:about="&idoo;Expert">
+        <rdfs:subClassOf rdf:resource="&idoo;Level"/>
+        <owl:disjointWith rdf:resource="&idoo;Novice"/>
+    </owl:Class>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Hybrid -->
+
+    <owl:Class rdf:about="&idoo;Hybrid">
+        <rdfs:subClassOf rdf:resource="&idoo;Classification"/>
+    </owl:Class>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Isometric -->
+
+    <owl:Class rdf:about="&idoo;Isometric">
+        <rdfs:subClassOf rdf:resource="&idoo;Classification"/>
+    </owl:Class>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Isotonic -->
+
+    <owl:Class rdf:about="&idoo;Isotonic">
+        <rdfs:subClassOf rdf:resource="&idoo;Classification"/>
+    </owl:Class>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Level -->
+
+    <owl:Class rdf:about="&idoo;Level">
+        <rdfs:subClassOf rdf:resource="http://www.loa-cnr.it/ontologies/DUL.owl#Event"/>
+    </owl:Class>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Linear -->
+
+    <owl:Class rdf:about="&idoo;Linear">
+        <rdfs:subClassOf rdf:resource="&idoo;Macros"/>
+        <owl:disjointWith rdf:resource="&idoo;Non-linear"/>
+    </owl:Class>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Macros -->
+
+    <owl:Class rdf:about="&idoo;Macros">
+        <rdfs:subClassOf rdf:resource="http://www.loa-cnr.it/ontologies/DUL.owl#Event"/>
+    </owl:Class>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Non-linear -->
+
+    <owl:Class rdf:about="&idoo;Non-linear">
+        <rdfs:subClassOf rdf:resource="&idoo;Macros"/>
+    </owl:Class>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Novice -->
+
+    <owl:Class rdf:about="&idoo;Novice">
+        <rdfs:subClassOf rdf:resource="&idoo;Level"/>
+    </owl:Class>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Properties -->
+
+    <owl:Class rdf:about="&idoo;Properties">
+        <rdfs:subClassOf rdf:resource="&idoo;Controllers"/>
+    </owl:Class>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#VirtualEnviroment -->
+
+    <owl:Class rdf:about="&idoo;VirtualEnviroment">
+        <rdfs:subClassOf rdf:resource="&ComputerSystem_ODP;Software"/>
+    </owl:Class>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Individuals
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#2Axes -->
+
+    <owl:NamedIndividual rdf:about="&idoo;2Axes">
+        <rdf:type rdf:resource="&idoo;DOF"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#4Axes -->
+
+    <owl:NamedIndividual rdf:about="&idoo;4Axes">
+        <rdf:type rdf:resource="&idoo;DOF"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#ACRUX -->
+
+    <owl:NamedIndividual rdf:about="&idoo;ACRUX">
+        <rdf:type rdf:resource="&idoo;Hybrid"/>
+        <idoo:pitch_scale rdf:datatype="&xsd;int">-1</idoo:pitch_scale>
+        <idoo:roll_scale rdf:datatype="&xsd;int">-1</idoo:roll_scale>
+        <idoo:y_scale rdf:datatype="&xsd;int">-1</idoo:y_scale>
+        <idoo:z_scale rdf:datatype="&xsd;int">-1</idoo:z_scale>
+        <idoo:btn1_bit rdf:datatype="&xsd;int">0</idoo:btn1_bit>
+        <idoo:x_channel rdf:datatype="&xsd;int">0</idoo:x_channel>
+        <idoo:z_channel rdf:datatype="&xsd;int">0</idoo:z_channel>
+        <idoo:y_channel rdf:datatype="&xsd;int">0</idoo:y_channel>
+        <idoo:VID rdf:datatype="&xsd;string">0x1a34</idoo:VID>
+        <idoo:PID rdf:datatype="&xsd;string">0x805</idoo:PID>
+        <idoo:x_byte1 rdf:datatype="&xsd;int">1</idoo:x_byte1>
+        <idoo:btn2_byte rdf:datatype="&xsd;int">1</idoo:btn2_byte>
+        <idoo:x_scale rdf:datatype="&xsd;int">1</idoo:x_scale>
+        <idoo:HATS rdf:datatype="&xsd;int">1</idoo:HATS>
+        <idoo:yaw_scale rdf:datatype="&xsd;int">1</idoo:yaw_scale>
+        <idoo:btn1_byte rdf:datatype="&xsd;int">1</idoo:btn1_byte>
+        <idoo:pitch_byte1 rdf:datatype="&xsd;int">1</idoo:pitch_byte1>
+        <idoo:btn2_bit rdf:datatype="&xsd;int">1</idoo:btn2_bit>
+        <idoo:pitch_channel rdf:datatype="&xsd;int">2</idoo:pitch_channel>
+        <idoo:yaw_channel rdf:datatype="&xsd;int">2</idoo:yaw_channel>
+        <idoo:BTNS rdf:datatype="&xsd;int">2</idoo:BTNS>
+        <idoo:roll_channel rdf:datatype="&xsd;int">2</idoo:roll_channel>
+        <idoo:pitch_byte2 rdf:datatype="&xsd;int">2</idoo:pitch_byte2>
+        <idoo:x_byte2 rdf:datatype="&xsd;int">2</idoo:x_byte2>
+        <idoo:roll_byte1 rdf:datatype="&xsd;int">3</idoo:roll_byte1>
+        <idoo:btn1_channel rdf:datatype="&xsd;int">3</idoo:btn1_channel>
+        <idoo:btn2_channel rdf:datatype="&xsd;int">3</idoo:btn2_channel>
+        <idoo:y_byte1 rdf:datatype="&xsd;int">3</idoo:y_byte1>
+        <idoo:DOF rdf:datatype="&xsd;int">3</idoo:DOF>
+        <idoo:roll_byte2 rdf:datatype="&xsd;int">4</idoo:roll_byte2>
+        <idoo:y_byte2 rdf:datatype="&xsd;int">4</idoo:y_byte2>
+        <idoo:yaw_byte1 rdf:datatype="&xsd;int">5</idoo:yaw_byte1>
+        <idoo:z_byte1 rdf:datatype="&xsd;int">5</idoo:z_byte1>
+        <idoo:z_byte2 rdf:datatype="&xsd;int">6</idoo:z_byte2>
+        <idoo:yaw_byte2 rdf:datatype="&xsd;int">6</idoo:yaw_byte2>
+        <idoo:productName rdf:datatype="&xsd;string">SL-6632 Dark Tornado Joystick</idoo:productName>
+        <idoo:isAppropriate rdf:resource="&idoo;Anyone"/>
+        <idoo:hasProperties rdf:resource="&idoo;MultipleAxes"/>
+        <idoo:Executes rdf:resource="&idoo;Rotate"/>
+        <idoo:Executes rdf:resource="&idoo;RotationCamera"/>
+        <idoo:Executes rdf:resource="&idoo;TranslationBricks"/>
+        <ComputerSystem_ODP:usesOperatingSystem rdf:resource="&idoo;Win10"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Anyone -->
+
+    <owl:NamedIndividual rdf:about="&idoo;Anyone">
+        <rdf:type rdf:resource="&idoo;Novice"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#CentreDownTF -->
+
+    <owl:NamedIndividual rdf:about="&idoo;CentreDownTF">
+        <rdf:type rdf:resource="&idoo;Non-linear"/>
+        <idoo:macroName rdf:datatype="&xsd;string">CentreDownTF</idoo:macroName>
+        <idoo:uses_VE rdf:resource="&idoo;Drishti"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#CentreUpTF -->
+
+    <owl:NamedIndividual rdf:about="&idoo;CentreUpTF">
+        <rdf:type rdf:resource="&idoo;Non-linear"/>
+        <idoo:macroName rdf:datatype="&xsd;string">CentreUpTF</idoo:macroName>
+        <idoo:uses_VE rdf:resource="&idoo;Drishti"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#ClippingPlanes -->
+
+    <owl:NamedIndividual rdf:about="&idoo;ClippingPlanes">
+        <rdf:type rdf:resource="&idoo;Non-linear"/>
+        <idoo:macroName rdf:datatype="&xsd;string">clipping</idoo:macroName>
+        <idoo:uses_VE rdf:resource="&idoo;Drishti"/>
+        <idoo:uses_VE rdf:resource="&idoo;Unity"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Cropping -->
+
+    <owl:NamedIndividual rdf:about="&idoo;Cropping">
+        <rdf:type rdf:resource="&idoo;Non-linear"/>
+        <idoo:macroName rdf:datatype="&xsd;string">cropping</idoo:macroName>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Drishti -->
+
+    <owl:NamedIndividual rdf:about="&idoo;Drishti">
+        <rdf:type rdf:resource="&idoo;VirtualEnviroment"/>
+        <idoo:productName rdf:datatype="&xsd;string">Drishti</idoo:productName>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Flightstick -->
+
+    <owl:NamedIndividual rdf:about="&idoo;Flightstick">
+        <rdf:type rdf:resource="&idoo;Hybrid"/>
+        <idoo:y_scale rdf:datatype="&xsd;int">-1</idoo:y_scale>
+        <idoo:pitch_scale rdf:datatype="&xsd;int">-1</idoo:pitch_scale>
+        <idoo:roll_scale rdf:datatype="&xsd;int">-1</idoo:roll_scale>
+        <idoo:z_scale rdf:datatype="&xsd;int">-1</idoo:z_scale>
+        <idoo:y_channel rdf:datatype="&xsd;int">0</idoo:y_channel>
+        <idoo:z_channel rdf:datatype="&xsd;int">0</idoo:z_channel>
+        <idoo:x_channel rdf:datatype="&xsd;int">0</idoo:x_channel>
+        <idoo:btn1_bit rdf:datatype="&xsd;int">0</idoo:btn1_bit>
+        <idoo:VID rdf:datatype="&xsd;string">0x11ff</idoo:VID>
+        <idoo:PID rdf:datatype="&xsd;string">0x3331</idoo:PID>
+        <idoo:x_scale rdf:datatype="&xsd;int">1</idoo:x_scale>
+        <idoo:HATS rdf:datatype="&xsd;int">1</idoo:HATS>
+        <idoo:btn2_byte rdf:datatype="&xsd;int">1</idoo:btn2_byte>
+        <idoo:btn2_bit rdf:datatype="&xsd;int">1</idoo:btn2_bit>
+        <idoo:pitch_byte1 rdf:datatype="&xsd;int">1</idoo:pitch_byte1>
+        <idoo:btn1_byte rdf:datatype="&xsd;int">1</idoo:btn1_byte>
+        <idoo:yaw_scale rdf:datatype="&xsd;int">1</idoo:yaw_scale>
+        <idoo:x_byte1 rdf:datatype="&xsd;int">1</idoo:x_byte1>
+        <idoo:pitch_channel rdf:datatype="&xsd;int">2</idoo:pitch_channel>
+        <idoo:pitch_byte2 rdf:datatype="&xsd;int">2</idoo:pitch_byte2>
+        <idoo:roll_channel rdf:datatype="&xsd;int">2</idoo:roll_channel>
+        <idoo:yaw_channel rdf:datatype="&xsd;int">2</idoo:yaw_channel>
+        <idoo:BTNS rdf:datatype="&xsd;int">2</idoo:BTNS>
+        <idoo:x_byte2 rdf:datatype="&xsd;int">2</idoo:x_byte2>
+        <idoo:roll_byte1 rdf:datatype="&xsd;int">3</idoo:roll_byte1>
+        <idoo:y_byte1 rdf:datatype="&xsd;int">3</idoo:y_byte1>
+        <idoo:btn1_channel rdf:datatype="&xsd;int">3</idoo:btn1_channel>
+        <idoo:btn2_channel rdf:datatype="&xsd;int">3</idoo:btn2_channel>
+        <idoo:roll_byte2 rdf:datatype="&xsd;int">4</idoo:roll_byte2>
+        <idoo:y_byte2 rdf:datatype="&xsd;int">4</idoo:y_byte2>
+        <idoo:yaw_byte1 rdf:datatype="&xsd;int">5</idoo:yaw_byte1>
+        <idoo:z_byte1 rdf:datatype="&xsd;int">5</idoo:z_byte1>
+        <idoo:DOF rdf:datatype="&xsd;integer">5</idoo:DOF>
+        <idoo:yaw_byte2 rdf:datatype="&xsd;int">6</idoo:yaw_byte2>
+        <idoo:z_byte2 rdf:datatype="&xsd;int">6</idoo:z_byte2>
+        <idoo:productName rdf:datatype="&xsd;string">SPEEDLINK PHANTOM HAWK Flightstick</idoo:productName>
+        <idoo:isAppropriate rdf:resource="&idoo;Anyone"/>
+        <idoo:hasProperties rdf:resource="&idoo;MultipleAxes"/>
+        <idoo:Executes rdf:resource="&idoo;Rotate"/>
+        <idoo:Executes rdf:resource="&idoo;RotationCamera"/>
+        <idoo:Executes rdf:resource="&idoo;TranslationBricks"/>
+        <ComputerSystem_ODP:usesOperatingSystem rdf:resource="&idoo;Win10"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#GameCube -->
+
+    <owl:NamedIndividual rdf:about="&idoo;GameCube">
+        <rdf:type rdf:resource="&idoo;Hybrid"/>
+        <idoo:VID rdf:datatype="&xsd;string">0x0079</idoo:VID>
+        <idoo:PID rdf:datatype="&xsd;string">0x1843</idoo:PID>
+        <idoo:DOF rdf:datatype="&xsd;integer">6</idoo:DOF>
+        <idoo:productName rdf:datatype="&xsd;string">MAYFLASH GameCube Controller Adapter</idoo:productName>
+        <idoo:isAppropriate rdf:resource="&idoo;Anyone"/>
+        <idoo:hasProperties rdf:resource="&idoo;MultipleAxes"/>
+        <idoo:Executes rdf:resource="&idoo;Rotate"/>
+        <idoo:Executes rdf:resource="&idoo;RotationCamera"/>
+        <idoo:Executes rdf:resource="&idoo;TranslationBricks"/>
+        <ComputerSystem_ODP:usesOperatingSystem rdf:resource="&idoo;Win10"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Gamers -->
+
+    <owl:NamedIndividual rdf:about="&idoo;Gamers">
+        <rdf:type rdf:resource="&idoo;Expert"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#JoystickDarkTornado -->
+
+    <owl:NamedIndividual rdf:about="&idoo;JoystickDarkTornado">
+        <rdf:type rdf:resource="&idoo;Isometric"/>
+        <idoo:HATS rdf:datatype="&xsd;int">0</idoo:HATS>
+        <idoo:leftStickUDIdx rdf:datatype="&xsd;int">0</idoo:leftStickUDIdx>
+        <idoo:hatLeftIdx rdf:datatype="&xsd;int">0</idoo:hatLeftIdx>
+        <idoo:hatIdx rdf:datatype="&xsd;int">0</idoo:hatIdx>
+        <idoo:leftStickLRIdx rdf:datatype="&xsd;int">0</idoo:leftStickLRIdx>
+        <idoo:hatRightIdx rdf:datatype="&xsd;int">0</idoo:hatRightIdx>
+        <idoo:hatDownIdx rdf:datatype="&xsd;int">0</idoo:hatDownIdx>
+        <idoo:hatUpIdx rdf:datatype="&xsd;int">0</idoo:hatUpIdx>
+        <idoo:VID rdf:datatype="&xsd;string">0x1a34</idoo:VID>
+        <idoo:PID rdf:datatype="&xsd;string">0x805</idoo:PID>
+        <idoo:rightBtn1Idx rdf:datatype="&xsd;int">1</idoo:rightBtn1Idx>
+        <idoo:leftBtn2Idx rdf:datatype="&xsd;int">1</idoo:leftBtn2Idx>
+        <idoo:rightStickUDIdx rdf:datatype="&xsd;int">1</idoo:rightStickUDIdx>
+        <idoo:leftBtn1Idx rdf:datatype="&xsd;int">1</idoo:leftBtn1Idx>
+        <idoo:rightTriggerIdx rdf:datatype="&xsd;int">1</idoo:rightTriggerIdx>
+        <idoo:leftTriggerIdx rdf:datatype="&xsd;int">1</idoo:leftTriggerIdx>
+        <idoo:rightStickLRIdx rdf:datatype="&xsd;int">1</idoo:rightStickLRIdx>
+        <idoo:rightBtn2Idx rdf:datatype="&xsd;int">1</idoo:rightBtn2Idx>
+        <idoo:startBtnIdx rdf:datatype="&xsd;int">2</idoo:startBtnIdx>
+        <idoo:selectBtnIdx rdf:datatype="&xsd;int">3</idoo:selectBtnIdx>
+        <idoo:DOF rdf:datatype="&xsd;int">3</idoo:DOF>
+        <idoo:squareBtnIdx rdf:datatype="&xsd;int">4</idoo:squareBtnIdx>
+        <idoo:triangleBtnIdx rdf:datatype="&xsd;int">5</idoo:triangleBtnIdx>
+        <idoo:circleBtnIdx rdf:datatype="&xsd;int">6</idoo:circleBtnIdx>
+        <idoo:BTNS rdf:datatype="&xsd;int">7</idoo:BTNS>
+        <idoo:crossXBtnIdx rdf:datatype="&xsd;int">7</idoo:crossXBtnIdx>
+        <idoo:productName rdf:datatype="&xsd;string">SL-6632 Dark Tornado Joystick</idoo:productName>
+        <idoo:hasProperties rdf:resource="&idoo;4Axes"/>
+        <idoo:Executes rdf:resource="&idoo;ClippingPlanes"/>
+        <idoo:isAppropriate rdf:resource="&idoo;Gamers"/>
+        <idoo:Executes rdf:resource="&idoo;Rotate"/>
+        <idoo:Executes rdf:resource="&idoo;RotationCamera"/>
+        <idoo:Executes rdf:resource="&idoo;TranslationBricks"/>
+        <ComputerSystem_ODP:usesOperatingSystem rdf:resource="&idoo;Win10"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#JoystickPhantomHank -->
+
+    <owl:NamedIndividual rdf:about="&idoo;JoystickPhantomHank">
+        <rdf:type rdf:resource="&idoo;Isometric"/>
+        <idoo:hatUpIdx rdf:datatype="&xsd;int">-1</idoo:hatUpIdx>
+        <idoo:hatRightIdx rdf:datatype="&xsd;int">-1</idoo:hatRightIdx>
+        <idoo:hatDownIdx rdf:datatype="&xsd;int">-1</idoo:hatDownIdx>
+        <idoo:hatLeftIdx rdf:datatype="&xsd;int">-1</idoo:hatLeftIdx>
+        <idoo:leftStickUDIdx rdf:datatype="&xsd;int">0</idoo:leftStickUDIdx>
+        <idoo:triangleBtnIdx rdf:datatype="&xsd;int">0</idoo:triangleBtnIdx>
+        <idoo:leftStickLRIdx rdf:datatype="&xsd;int">0</idoo:leftStickLRIdx>
+        <idoo:hatIdx rdf:datatype="&xsd;int">0</idoo:hatIdx>
+        <idoo:VID rdf:datatype="&xsd;string">0x11ff</idoo:VID>
+        <idoo:PID rdf:datatype="&xsd;string">0x3331</idoo:PID>
+        <idoo:squareBtnIdx rdf:datatype="&xsd;int">1</idoo:squareBtnIdx>
+        <idoo:HATS rdf:datatype="&xsd;int">1</idoo:HATS>
+        <idoo:rightStickUDIdx rdf:datatype="&xsd;int">1</idoo:rightStickUDIdx>
+        <idoo:rightStickLRIdx rdf:datatype="&xsd;int">1</idoo:rightStickLRIdx>
+        <idoo:crossXBtnIdx rdf:datatype="&xsd;int">10</idoo:crossXBtnIdx>
+        <idoo:BTNS rdf:datatype="&xsd;int">12</idoo:BTNS>
+        <idoo:leftTriggerIdx rdf:datatype="&xsd;int">3</idoo:leftTriggerIdx>
+        <idoo:rightTriggerIdx rdf:datatype="&xsd;int">3</idoo:rightTriggerIdx>
+        <idoo:leftBtn1Idx rdf:datatype="&xsd;int">3</idoo:leftBtn1Idx>
+        <idoo:rightBtn2Idx rdf:datatype="&xsd;int">4</idoo:rightBtn2Idx>
+        <idoo:DOF rdf:datatype="&xsd;int">5</idoo:DOF>
+        <idoo:rightBtn1Idx rdf:datatype="&xsd;int">5</idoo:rightBtn1Idx>
+        <idoo:leftBtn2Idx rdf:datatype="&xsd;int">6</idoo:leftBtn2Idx>
+        <idoo:startBtnIdx rdf:datatype="&xsd;int">7</idoo:startBtnIdx>
+        <idoo:circleBtnIdx rdf:datatype="&xsd;int">8</idoo:circleBtnIdx>
+        <idoo:selectBtnIdx rdf:datatype="&xsd;int">9</idoo:selectBtnIdx>
+        <idoo:productName rdf:datatype="&xsd;string">PC Game Controller</idoo:productName>
+        <idoo:hasProperties rdf:resource="&idoo;4Axes"/>
+        <idoo:Executes rdf:resource="&idoo;ClippingPlanes"/>
+        <idoo:isAppropriate rdf:resource="&idoo;Gamers"/>
+        <idoo:Executes rdf:resource="&idoo;Rotate"/>
+        <idoo:Executes rdf:resource="&idoo;RotationCamera"/>
+        <idoo:Executes rdf:resource="&idoo;TranslationBricks"/>
+        <ComputerSystem_ODP:usesOperatingSystem rdf:resource="&idoo;Win10"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#LeftDownTF -->
+
+    <owl:NamedIndividual rdf:about="&idoo;LeftDownTF">
+        <rdf:type rdf:resource="&idoo;Non-linear"/>
+        <idoo:macroName rdf:datatype="&xsd;string">LeftDownTF</idoo:macroName>
+        <idoo:uses_VE rdf:resource="&idoo;Drishti"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#LeftUpTF -->
+
+    <owl:NamedIndividual rdf:about="&idoo;LeftUpTF">
+        <rdf:type rdf:resource="&idoo;Non-linear"/>
+        <idoo:macroName rdf:datatype="&xsd;string">LeftUpTF</idoo:macroName>
+        <idoo:uses_VE rdf:resource="&idoo;Drishti"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#MultipleAxes -->
+
+    <owl:NamedIndividual rdf:about="&idoo;MultipleAxes">
+        <rdf:type rdf:resource="&idoo;DOF"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#PS4Controller -->
+
+    <owl:NamedIndividual rdf:about="&idoo;PS4Controller">
+        <rdf:type rdf:resource="&idoo;Hybrid"/>
+        <idoo:hatLeftIdx rdf:datatype="&xsd;int">-1</idoo:hatLeftIdx>
+        <idoo:hatUpIdx rdf:datatype="&xsd;int">-1</idoo:hatUpIdx>
+        <idoo:hatDownIdx rdf:datatype="&xsd;int">-1</idoo:hatDownIdx>
+        <idoo:hatRightIdx rdf:datatype="&xsd;int">-1</idoo:hatRightIdx>
+        <idoo:leftStickLRIdx rdf:datatype="&xsd;int">0</idoo:leftStickLRIdx>
+        <idoo:hatIdx rdf:datatype="&xsd;int">0</idoo:hatIdx>
+        <idoo:squareBtnIdx rdf:datatype="&xsd;int">0</idoo:squareBtnIdx>
+        <idoo:VID rdf:datatype="&xsd;string">0x54c</idoo:VID>
+        <idoo:PID rdf:datatype="&xsd;string">0x9cc</idoo:PID>
+        <idoo:HATS rdf:datatype="&xsd;int">0</idoo:HATS>
+        <idoo:leftStickUDIdx rdf:datatype="&xsd;int">1</idoo:leftStickUDIdx>
+        <idoo:crossXBtnIdx rdf:datatype="&xsd;int">1</idoo:crossXBtnIdx>
+        <idoo:BTNS rdf:datatype="&xsd;int">14</idoo:BTNS>
+        <idoo:rightStickLRIdx rdf:datatype="&xsd;int">2</idoo:rightStickLRIdx>
+        <idoo:circleBtnIdx rdf:datatype="&xsd;int">2</idoo:circleBtnIdx>
+        <idoo:rightStickUDIdx rdf:datatype="&xsd;int">3</idoo:rightStickUDIdx>
+        <idoo:triangleBtnIdx rdf:datatype="&xsd;int">3</idoo:triangleBtnIdx>
+        <idoo:rightTriggerIdx rdf:datatype="&xsd;int">4</idoo:rightTriggerIdx>
+        <idoo:leftBtn1Idx rdf:datatype="&xsd;int">4</idoo:leftBtn1Idx>
+        <idoo:rightBtn1Idx rdf:datatype="&xsd;int">5</idoo:rightBtn1Idx>
+        <idoo:leftTriggerIdx rdf:datatype="&xsd;int">5</idoo:leftTriggerIdx>
+        <idoo:leftBtn2Idx rdf:datatype="&xsd;int">6</idoo:leftBtn2Idx>
+        <idoo:DOF rdf:datatype="&xsd;integer">6</idoo:DOF>
+        <idoo:rightBtn2Idx rdf:datatype="&xsd;int">7</idoo:rightBtn2Idx>
+        <idoo:selectBtnIdx rdf:datatype="&xsd;int">8</idoo:selectBtnIdx>
+        <idoo:startBtnIdx rdf:datatype="&xsd;int">9</idoo:startBtnIdx>
+        <idoo:productName rdf:datatype="&xsd;string">PS4 Controller</idoo:productName>
+        <idoo:isAppropriate rdf:resource="&idoo;Anyone"/>
+        <idoo:hasProperties rdf:resource="&idoo;MultipleAxes"/>
+        <idoo:Executes rdf:resource="&idoo;Rotate"/>
+        <idoo:Executes rdf:resource="&idoo;RotationCamera"/>
+        <idoo:Executes rdf:resource="&idoo;TranslationBricks"/>
+        <ComputerSystem_ODP:usesOperatingSystem rdf:resource="&idoo;Win10"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#RightDownTF -->
+
+    <owl:NamedIndividual rdf:about="&idoo;RightDownTF">
+        <rdf:type rdf:resource="&idoo;Non-linear"/>
+        <idoo:macroName rdf:datatype="&xsd;string">RightDownTF</idoo:macroName>
+        <idoo:uses_VE rdf:resource="&idoo;Drishti"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#RightUpTF -->
+
+    <owl:NamedIndividual rdf:about="&idoo;RightUpTF">
+        <rdf:type rdf:resource="&idoo;Non-linear"/>
+        <idoo:macroName rdf:datatype="&xsd;string">RightUpTF</idoo:macroName>
+        <idoo:uses_VE rdf:resource="&idoo;Drishti"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Rotate -->
+
+    <owl:NamedIndividual rdf:about="&idoo;Rotate">
+        <rdf:type rdf:resource="&idoo;Linear"/>
+        <idoo:macroName rdf:datatype="&xsd;string">rotate</idoo:macroName>
+        <idoo:uses_VE rdf:resource="&idoo;Drishti"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#RotationCamera -->
+
+    <owl:NamedIndividual rdf:about="&idoo;RotationCamera">
+        <rdf:type rdf:resource="&idoo;Linear"/>
+        <idoo:macroName rdf:datatype="&xsd;string">addrotation</idoo:macroName>
+        <idoo:uses_VE rdf:resource="&idoo;Drishti"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#SpaceMouseCompact -->
+
+    <owl:NamedIndividual rdf:about="&idoo;SpaceMouseCompact">
+        <rdf:type rdf:resource="&idoo;Hybrid"/>
+        <idoo:z_scale rdf:datatype="&xsd;int">-1</idoo:z_scale>
+        <idoo:pitch_scale rdf:datatype="&xsd;int">-1</idoo:pitch_scale>
+        <idoo:y_scale rdf:datatype="&xsd;int">-1</idoo:y_scale>
+        <idoo:roll_scale rdf:datatype="&xsd;int">-1</idoo:roll_scale>
+        <idoo:btn1_bit rdf:datatype="&xsd;int">0</idoo:btn1_bit>
+        <idoo:VID rdf:datatype="&xsd;string">0x256f</idoo:VID>
+        <idoo:PID rdf:datatype="&xsd;string">0xc635</idoo:PID>
+        <idoo:x_channel rdf:datatype="&xsd;int">1</idoo:x_channel>
+        <idoo:x_byte1 rdf:datatype="&xsd;int">1</idoo:x_byte1>
+        <idoo:btn1_byte rdf:datatype="&xsd;int">1</idoo:btn1_byte>
+        <idoo:btn2_byte rdf:datatype="&xsd;int">1</idoo:btn2_byte>
+        <idoo:yaw_scale rdf:datatype="&xsd;int">1</idoo:yaw_scale>
+        <idoo:z_channel rdf:datatype="&xsd;int">1</idoo:z_channel>
+        <idoo:HATS rdf:datatype="&xsd;int">1</idoo:HATS>
+        <idoo:x_scale rdf:datatype="&xsd;int">1</idoo:x_scale>
+        <idoo:pitch_byte1 rdf:datatype="&xsd;int">1</idoo:pitch_byte1>
+        <idoo:btn2_bit rdf:datatype="&xsd;int">1</idoo:btn2_bit>
+        <idoo:y_channel rdf:datatype="&xsd;int">1</idoo:y_channel>
+        <idoo:pitch_channel rdf:datatype="&xsd;int">2</idoo:pitch_channel>
+        <idoo:x_byte2 rdf:datatype="&xsd;int">2</idoo:x_byte2>
+        <idoo:pitch_byte2 rdf:datatype="&xsd;int">2</idoo:pitch_byte2>
+        <idoo:roll_channel rdf:datatype="&xsd;int">2</idoo:roll_channel>
+        <idoo:yaw_channel rdf:datatype="&xsd;int">2</idoo:yaw_channel>
+        <idoo:BTNS rdf:datatype="&xsd;int">2</idoo:BTNS>
+        <idoo:y_byte1 rdf:datatype="&xsd;int">3</idoo:y_byte1>
+        <idoo:btn1_channel rdf:datatype="&xsd;int">3</idoo:btn1_channel>
+        <idoo:btn2_channel rdf:datatype="&xsd;int">3</idoo:btn2_channel>
+        <idoo:roll_byte1 rdf:datatype="&xsd;int">3</idoo:roll_byte1>
+        <idoo:roll_byte2 rdf:datatype="&xsd;int">4</idoo:roll_byte2>
+        <idoo:y_byte2 rdf:datatype="&xsd;int">4</idoo:y_byte2>
+        <idoo:yaw_byte1 rdf:datatype="&xsd;int">5</idoo:yaw_byte1>
+        <idoo:z_byte1 rdf:datatype="&xsd;int">5</idoo:z_byte1>
+        <idoo:yaw_byte2 rdf:datatype="&xsd;int">6</idoo:yaw_byte2>
+        <idoo:z_byte2 rdf:datatype="&xsd;int">6</idoo:z_byte2>
+        <idoo:DOF rdf:datatype="&xsd;integer">6</idoo:DOF>
+        <idoo:productName rdf:datatype="&xsd;string">SpaceMouse Compact</idoo:productName>
+        <idoo:isAppropriate rdf:resource="&idoo;Anyone"/>
+        <idoo:hasProperties rdf:resource="&idoo;MultipleAxes"/>
+        <idoo:Executes rdf:resource="&idoo;Rotate"/>
+        <idoo:Executes rdf:resource="&idoo;RotationCamera"/>
+        <idoo:Executes rdf:resource="&idoo;TranslationBricks"/>
+        <ComputerSystem_ODP:usesOperatingSystem rdf:resource="&idoo;Win10"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#SpaceMouseWireless -->
+
+    <owl:NamedIndividual rdf:about="&idoo;SpaceMouseWireless">
+        <rdf:type rdf:resource="&idoo;Hybrid"/>
+        <idoo:pitch_scale rdf:datatype="&xsd;int">-1</idoo:pitch_scale>
+        <idoo:y_scale rdf:datatype="&xsd;int">-1</idoo:y_scale>
+        <idoo:roll_scale rdf:datatype="&xsd;int">-1</idoo:roll_scale>
+        <idoo:z_scale rdf:datatype="&xsd;int">-1</idoo:z_scale>
+        <idoo:btn1_bit rdf:datatype="&xsd;int">0</idoo:btn1_bit>
+        <idoo:VID rdf:datatype="&xsd;string">0x256f</idoo:VID>
+        <idoo:PID rdf:datatype="&xsd;string">0xc62e</idoo:PID>
+        <idoo:btn1_byte rdf:datatype="&xsd;int">1</idoo:btn1_byte>
+        <idoo:HATS rdf:datatype="&xsd;int">1</idoo:HATS>
+        <idoo:z_channel rdf:datatype="&xsd;int">1</idoo:z_channel>
+        <idoo:roll_channel rdf:datatype="&xsd;int">1</idoo:roll_channel>
+        <idoo:x_byte1 rdf:datatype="&xsd;int">1</idoo:x_byte1>
+        <idoo:pitch_channel rdf:datatype="&xsd;int">1</idoo:pitch_channel>
+        <idoo:x_channel rdf:datatype="&xsd;int">1</idoo:x_channel>
+        <idoo:btn2_bit rdf:datatype="&xsd;int">1</idoo:btn2_bit>
+        <idoo:yaw_channel rdf:datatype="&xsd;int">1</idoo:yaw_channel>
+        <idoo:y_channel rdf:datatype="&xsd;int">1</idoo:y_channel>
+        <idoo:x_scale rdf:datatype="&xsd;int">1</idoo:x_scale>
+        <idoo:btn2_byte rdf:datatype="&xsd;int">1</idoo:btn2_byte>
+        <idoo:yaw_scale rdf:datatype="&xsd;int">1</idoo:yaw_scale>
+        <idoo:roll_byte2 rdf:datatype="&xsd;int">10</idoo:roll_byte2>
+        <idoo:yaw_byte1 rdf:datatype="&xsd;int">11</idoo:yaw_byte1>
+        <idoo:yaw_byte2 rdf:datatype="&xsd;int">12</idoo:yaw_byte2>
+        <idoo:x_byte2 rdf:datatype="&xsd;int">2</idoo:x_byte2>
+        <idoo:BTNS rdf:datatype="&xsd;int">2</idoo:BTNS>
+        <idoo:btn2_channel rdf:datatype="&xsd;int">3</idoo:btn2_channel>
+        <idoo:btn1_channel rdf:datatype="&xsd;int">3</idoo:btn1_channel>
+        <idoo:y_byte1 rdf:datatype="&xsd;int">3</idoo:y_byte1>
+        <idoo:y_byte2 rdf:datatype="&xsd;int">4</idoo:y_byte2>
+        <idoo:z_byte1 rdf:datatype="&xsd;int">5</idoo:z_byte1>
+        <idoo:z_byte2 rdf:datatype="&xsd;int">6</idoo:z_byte2>
+        <idoo:DOF rdf:datatype="&xsd;integer">6</idoo:DOF>
+        <idoo:pitch_byte1 rdf:datatype="&xsd;int">7</idoo:pitch_byte1>
+        <idoo:pitch_byte2 rdf:datatype="&xsd;int">8</idoo:pitch_byte2>
+        <idoo:roll_byte1 rdf:datatype="&xsd;int">9</idoo:roll_byte1>
+        <idoo:productName rdf:datatype="&xsd;string">SpaceMouse Wireless</idoo:productName>
+        <idoo:isAppropriate rdf:resource="&idoo;Anyone"/>
+        <idoo:hasProperties rdf:resource="&idoo;MultipleAxes"/>
+        <idoo:Executes rdf:resource="&idoo;Rotate"/>
+        <idoo:Executes rdf:resource="&idoo;RotationCamera"/>
+        <idoo:Executes rdf:resource="&idoo;TranslationBricks"/>
+        <ComputerSystem_ODP:usesOperatingSystem rdf:resource="&idoo;Win10"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#SpaceNavigator -->
+
+    <owl:NamedIndividual rdf:about="&idoo;SpaceNavigator">
+        <rdf:type rdf:resource="&idoo;Hybrid"/>
+        <idoo:roll_scale rdf:datatype="&xsd;int">-1</idoo:roll_scale>
+        <idoo:z_scale rdf:datatype="&xsd;int">-1</idoo:z_scale>
+        <idoo:y_scale rdf:datatype="&xsd;int">-1</idoo:y_scale>
+        <idoo:pitch_scale rdf:datatype="&xsd;int">-1</idoo:pitch_scale>
+        <idoo:btn1_bit rdf:datatype="&xsd;int">0</idoo:btn1_bit>
+        <idoo:VID rdf:datatype="&xsd;string">0x46d</idoo:VID>
+        <idoo:PID rdf:datatype="&xsd;string">0xc626</idoo:PID>
+        <idoo:y_channel rdf:datatype="&xsd;int">1</idoo:y_channel>
+        <idoo:yaw_scale rdf:datatype="&xsd;int">1</idoo:yaw_scale>
+        <idoo:HATS rdf:datatype="&xsd;int">1</idoo:HATS>
+        <idoo:pitch_byte1 rdf:datatype="&xsd;int">1</idoo:pitch_byte1>
+        <idoo:x_channel rdf:datatype="&xsd;int">1</idoo:x_channel>
+        <idoo:x_byte1 rdf:datatype="&xsd;int">1</idoo:x_byte1>
+        <idoo:x_scale rdf:datatype="&xsd;int">1</idoo:x_scale>
+        <idoo:btn1_byte rdf:datatype="&xsd;int">1</idoo:btn1_byte>
+        <idoo:btn2_bit rdf:datatype="&xsd;int">1</idoo:btn2_bit>
+        <idoo:btn2_byte rdf:datatype="&xsd;int">1</idoo:btn2_byte>
+        <idoo:z_channel rdf:datatype="&xsd;int">1</idoo:z_channel>
+        <idoo:pitch_channel rdf:datatype="&xsd;int">2</idoo:pitch_channel>
+        <idoo:x_byte2 rdf:datatype="&xsd;int">2</idoo:x_byte2>
+        <idoo:BTNS rdf:datatype="&xsd;int">2</idoo:BTNS>
+        <idoo:roll_channel rdf:datatype="&xsd;int">2</idoo:roll_channel>
+        <idoo:pitch_byte2 rdf:datatype="&xsd;int">2</idoo:pitch_byte2>
+        <idoo:yaw_channel rdf:datatype="&xsd;int">2</idoo:yaw_channel>
+        <idoo:btn2_channel rdf:datatype="&xsd;int">3</idoo:btn2_channel>
+        <idoo:y_byte1 rdf:datatype="&xsd;int">3</idoo:y_byte1>
+        <idoo:btn1_channel rdf:datatype="&xsd;int">3</idoo:btn1_channel>
+        <idoo:roll_byte1 rdf:datatype="&xsd;int">3</idoo:roll_byte1>
+        <idoo:y_byte2 rdf:datatype="&xsd;int">4</idoo:y_byte2>
+        <idoo:roll_byte2 rdf:datatype="&xsd;int">4</idoo:roll_byte2>
+        <idoo:z_byte1 rdf:datatype="&xsd;int">5</idoo:z_byte1>
+        <idoo:yaw_byte1 rdf:datatype="&xsd;int">5</idoo:yaw_byte1>
+        <idoo:z_byte2 rdf:datatype="&xsd;int">6</idoo:z_byte2>
+        <idoo:yaw_byte2 rdf:datatype="&xsd;int">6</idoo:yaw_byte2>
+        <idoo:DOF rdf:datatype="&xsd;integer">6</idoo:DOF>
+        <idoo:productName rdf:datatype="&xsd;string">SpaceNavigator</idoo:productName>
+        <idoo:isAppropriate rdf:resource="&idoo;Anyone"/>
+        <idoo:hasProperties rdf:resource="&idoo;MultipleAxes"/>
+        <idoo:Executes rdf:resource="&idoo;Rotate"/>
+        <idoo:Executes rdf:resource="&idoo;RotationCamera"/>
+        <idoo:Executes rdf:resource="&idoo;TranslationBricks"/>
+        <ComputerSystem_ODP:usesOperatingSystem rdf:resource="&idoo;Win10"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#TranslationBricks -->
+
+    <owl:NamedIndividual rdf:about="&idoo;TranslationBricks">
+        <rdf:type rdf:resource="&idoo;Linear"/>
+        <idoo:macroName rdf:datatype="&xsd;string">movebrick</idoo:macroName>
+        <idoo:uses_VE rdf:resource="&idoo;Drishti"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Unity -->
+
+    <owl:NamedIndividual rdf:about="&idoo;Unity">
+        <rdf:type rdf:resource="&idoo;VirtualEnviroment"/>
+        <idoo:productName rdf:datatype="&xsd;string">Unity</idoo:productName>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Win10 -->
+
+    <owl:NamedIndividual rdf:about="&idoo;Win10">
+        <rdf:type rdf:resource="&ComputerSystem_ODP;OperatingSystem"/>
+        <idoo:productName rdf:datatype="&xsd;string">Windows 10 Pro</idoo:productName>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Wing -->
+
+    <owl:NamedIndividual rdf:about="&idoo;Wing">
+        <rdf:type rdf:resource="&idoo;Hybrid"/>
+        <idoo:hatIdx rdf:datatype="&xsd;int">-1</idoo:hatIdx>
+        <idoo:hatUpIdx rdf:datatype="&xsd;int">0</idoo:hatUpIdx>
+        <idoo:hatLeftIdx rdf:datatype="&xsd;int">0</idoo:hatLeftIdx>
+        <idoo:rightBtn2Idx rdf:datatype="&xsd;int">0</idoo:rightBtn2Idx>
+        <idoo:HATS rdf:datatype="&xsd;int">0</idoo:HATS>
+        <idoo:rightBtn1Idx rdf:datatype="&xsd;int">0</idoo:rightBtn1Idx>
+        <idoo:hatRightIdx rdf:datatype="&xsd;int">0</idoo:hatRightIdx>
+        <idoo:leftStickLRIdx rdf:datatype="&xsd;int">0</idoo:leftStickLRIdx>
+        <idoo:leftBtn1Idx rdf:datatype="&xsd;int">0</idoo:leftBtn1Idx>
+        <idoo:selectBtnIdx rdf:datatype="&xsd;int">0</idoo:selectBtnIdx>
+        <idoo:leftStickUDIdx rdf:datatype="&xsd;int">0</idoo:leftStickUDIdx>
+        <idoo:hatDownIdx rdf:datatype="&xsd;int">0</idoo:hatDownIdx>
+        <idoo:leftBtn2Idx rdf:datatype="&xsd;int">0</idoo:leftBtn2Idx>
+        <idoo:triangleBtnIdx rdf:datatype="&xsd;int">0</idoo:triangleBtnIdx>
+        <idoo:startBtnIdx rdf:datatype="&xsd;int">0</idoo:startBtnIdx>
+        <idoo:VID rdf:datatype="&xsd;string">0x10c4</idoo:VID>
+        <idoo:PID rdf:datatype="&xsd;string">0x81b9</idoo:PID>
+        <idoo:squareBtnIdx rdf:datatype="&xsd;int">1</idoo:squareBtnIdx>
+        <idoo:rightStickUDIdx rdf:datatype="&xsd;int">1</idoo:rightStickUDIdx>
+        <idoo:rightStickLRIdx rdf:datatype="&xsd;int">1</idoo:rightStickLRIdx>
+        <idoo:circleBtnIdx rdf:datatype="&xsd;int">2</idoo:circleBtnIdx>
+        <idoo:crossXBtnIdx rdf:datatype="&xsd;int">3</idoo:crossXBtnIdx>
+        <idoo:leftTriggerIdx rdf:datatype="&xsd;int">3</idoo:leftTriggerIdx>
+        <idoo:rightTriggerIdx rdf:datatype="&xsd;int">3</idoo:rightTriggerIdx>
+        <idoo:BTNS rdf:datatype="&xsd;int">4</idoo:BTNS>
+        <idoo:DOF rdf:datatype="&xsd;integer">4</idoo:DOF>
+        <idoo:productName rdf:datatype="&xsd;string">4 axis 4 button</idoo:productName>
+        <idoo:hasProperties rdf:resource="&idoo;4Axes"/>
+        <idoo:isAppropriate rdf:resource="&idoo;Gamers"/>
+        <idoo:Executes rdf:resource="&idoo;Rotate"/>
+        <idoo:Executes rdf:resource="&idoo;RotationCamera"/>
+        <idoo:Executes rdf:resource="&idoo;TranslationBricks"/>
+        <ComputerSystem_ODP:usesOperatingSystem rdf:resource="&idoo;Win10"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#XAxis -->
+
+    <owl:NamedIndividual rdf:about="&idoo;XAxis">
+        <rdf:type rdf:resource="&idoo;Linear"/>
+        <idoo:uses_VE rdf:resource="&idoo;Unity"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#XBoxGamepad -->
+
+    <owl:NamedIndividual rdf:about="&idoo;XBoxGamepad">
+        <rdf:type rdf:resource="&idoo;Hybrid"/>
+        <idoo:hatRightIdx rdf:datatype="&xsd;int">-1</idoo:hatRightIdx>
+        <idoo:hatLeftIdx rdf:datatype="&xsd;int">-1</idoo:hatLeftIdx>
+        <idoo:hatDownIdx rdf:datatype="&xsd;int">-1</idoo:hatDownIdx>
+        <idoo:hatUpIdx rdf:datatype="&xsd;int">-1</idoo:hatUpIdx>
+        <idoo:leftStickLRIdx rdf:datatype="&xsd;int">0</idoo:leftStickLRIdx>
+        <idoo:hatIdx rdf:datatype="&xsd;int">0</idoo:hatIdx>
+        <idoo:crossXBtnIdx rdf:datatype="&xsd;int">0</idoo:crossXBtnIdx>
+        <idoo:VID rdf:datatype="&xsd;string">0x46d</idoo:VID>
+        <idoo:PID rdf:datatype="&xsd;string">0xf301</idoo:PID>
+        <idoo:circleBtnIdx rdf:datatype="&xsd;int">1</idoo:circleBtnIdx>
+        <idoo:leftStickUDIdx rdf:datatype="&xsd;int">1</idoo:leftStickUDIdx>
+        <idoo:HATS rdf:datatype="&xsd;int">1</idoo:HATS>
+        <idoo:BTNS rdf:datatype="&xsd;int">10</idoo:BTNS>
+        <idoo:rightTriggerIdx rdf:datatype="&xsd;int">2</idoo:rightTriggerIdx>
+        <idoo:leftTriggerIdx rdf:datatype="&xsd;int">2</idoo:leftTriggerIdx>
+        <idoo:squareBtnIdx rdf:datatype="&xsd;int">2</idoo:squareBtnIdx>
+        <idoo:rightStickLRIdx rdf:datatype="&xsd;int">3</idoo:rightStickLRIdx>
+        <idoo:triangleBtnIdx rdf:datatype="&xsd;int">3</idoo:triangleBtnIdx>
+        <idoo:rightStickUDIdx rdf:datatype="&xsd;int">4</idoo:rightStickUDIdx>
+        <idoo:leftBtn1Idx rdf:datatype="&xsd;int">4</idoo:leftBtn1Idx>
+        <idoo:rightBtn1Idx rdf:datatype="&xsd;int">5</idoo:rightBtn1Idx>
+        <idoo:DOF rdf:datatype="&xsd;integer">5</idoo:DOF>
+        <idoo:leftBtn2Idx rdf:datatype="&xsd;int">6</idoo:leftBtn2Idx>
+        <idoo:selectBtnIdx rdf:datatype="&xsd;int">6</idoo:selectBtnIdx>
+        <idoo:rightBtn2Idx rdf:datatype="&xsd;int">7</idoo:rightBtn2Idx>
+        <idoo:startBtnIdx rdf:datatype="&xsd;int">7</idoo:startBtnIdx>
+        <idoo:productName rdf:datatype="&xsd;string">Controller (XBOX 360 For Windows)</idoo:productName>
+        <idoo:isAppropriate rdf:resource="&idoo;Anyone"/>
+        <idoo:hasProperties rdf:resource="&idoo;MultipleAxes"/>
+        <idoo:Executes rdf:resource="&idoo;Rotate"/>
+        <idoo:Executes rdf:resource="&idoo;RotationCamera"/>
+        <idoo:Executes rdf:resource="&idoo;TranslationBricks"/>
+        <ComputerSystem_ODP:usesOperatingSystem rdf:resource="&idoo;Win10"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#XBoxGamepadOne1 -->
+
+    <owl:NamedIndividual rdf:about="&idoo;XBoxGamepadOne1">
+        <rdf:type rdf:resource="&idoo;Hybrid"/>
+        <idoo:hatLeftIdx rdf:datatype="&xsd;int">-1</idoo:hatLeftIdx>
+        <idoo:hatUpIdx rdf:datatype="&xsd;int">-1</idoo:hatUpIdx>
+        <idoo:hatDownIdx rdf:datatype="&xsd;int">-1</idoo:hatDownIdx>
+        <idoo:hatRightIdx rdf:datatype="&xsd;int">-1</idoo:hatRightIdx>
+        <idoo:hatIdx rdf:datatype="&xsd;int">0</idoo:hatIdx>
+        <idoo:leftStickLRIdx rdf:datatype="&xsd;int">0</idoo:leftStickLRIdx>
+        <idoo:crossXBtnIdx rdf:datatype="&xsd;int">0</idoo:crossXBtnIdx>
+        <idoo:PID rdf:datatype="&xsd;string">0x2ff</idoo:PID>
+        <idoo:VID rdf:datatype="&xsd;string">0x45e</idoo:VID>
+        <idoo:circleBtnIdx rdf:datatype="&xsd;int">1</idoo:circleBtnIdx>
+        <idoo:HATS rdf:datatype="&xsd;int">1</idoo:HATS>
+        <idoo:leftStickUDIdx rdf:datatype="&xsd;int">1</idoo:leftStickUDIdx>
+        <idoo:BTNS rdf:datatype="&xsd;int">16</idoo:BTNS>
+        <idoo:rightTriggerIdx rdf:datatype="&xsd;int">2</idoo:rightTriggerIdx>
+        <idoo:squareBtnIdx rdf:datatype="&xsd;int">2</idoo:squareBtnIdx>
+        <idoo:leftTriggerIdx rdf:datatype="&xsd;int">2</idoo:leftTriggerIdx>
+        <idoo:rightStickLRIdx rdf:datatype="&xsd;int">3</idoo:rightStickLRIdx>
+        <idoo:triangleBtnIdx rdf:datatype="&xsd;int">3</idoo:triangleBtnIdx>
+        <idoo:leftBtn1Idx rdf:datatype="&xsd;int">4</idoo:leftBtn1Idx>
+        <idoo:rightStickUDIdx rdf:datatype="&xsd;int">4</idoo:rightStickUDIdx>
+        <idoo:rightBtn1Idx rdf:datatype="&xsd;int">5</idoo:rightBtn1Idx>
+        <idoo:DOF rdf:datatype="&xsd;integer">5</idoo:DOF>
+        <idoo:selectBtnIdx rdf:datatype="&xsd;int">6</idoo:selectBtnIdx>
+        <idoo:leftBtn2Idx rdf:datatype="&xsd;int">6</idoo:leftBtn2Idx>
+        <idoo:rightBtn2Idx rdf:datatype="&xsd;int">7</idoo:rightBtn2Idx>
+        <idoo:startBtnIdx rdf:datatype="&xsd;int">7</idoo:startBtnIdx>
+        <idoo:productName rdf:datatype="&xsd;string">Controller (Xbox One For Windows)</idoo:productName>
+        <idoo:isAppropriate rdf:resource="&idoo;Anyone"/>
+        <idoo:hasProperties rdf:resource="&idoo;MultipleAxes"/>
+        <idoo:Executes rdf:resource="&idoo;Rotate"/>
+        <idoo:Executes rdf:resource="&idoo;RotationCamera"/>
+        <idoo:Executes rdf:resource="&idoo;TranslationBricks"/>
+        <ComputerSystem_ODP:usesOperatingSystem rdf:resource="&idoo;Win10"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#XBoxGamepadOne2 -->
+
+    <owl:NamedIndividual rdf:about="&idoo;XBoxGamepadOne2">
+        <rdf:type rdf:resource="&idoo;Hybrid"/>
+        <idoo:y_scale rdf:datatype="&xsd;int">-1</idoo:y_scale>
+        <idoo:z_scale rdf:datatype="&xsd;int">-1</idoo:z_scale>
+        <idoo:pitch_scale rdf:datatype="&xsd;int">-1</idoo:pitch_scale>
+        <idoo:roll_scale rdf:datatype="&xsd;int">-1</idoo:roll_scale>
+        <idoo:btn1_bit rdf:datatype="&xsd;int">0</idoo:btn1_bit>
+        <idoo:PID rdf:datatype="&xsd;string">0x2ff</idoo:PID>
+        <idoo:VID rdf:datatype="&xsd;string">0x45e</idoo:VID>
+        <idoo:z_channel rdf:datatype="&xsd;int">1</idoo:z_channel>
+        <idoo:x_byte1 rdf:datatype="&xsd;int">1</idoo:x_byte1>
+        <idoo:btn2_byte rdf:datatype="&xsd;int">1</idoo:btn2_byte>
+        <idoo:btn1_byte rdf:datatype="&xsd;int">1</idoo:btn1_byte>
+        <idoo:btn2_bit rdf:datatype="&xsd;int">1</idoo:btn2_bit>
+        <idoo:HATS rdf:datatype="&xsd;int">1</idoo:HATS>
+        <idoo:x_channel rdf:datatype="&xsd;int">1</idoo:x_channel>
+        <idoo:x_scale rdf:datatype="&xsd;int">1</idoo:x_scale>
+        <idoo:pitch_byte1 rdf:datatype="&xsd;int">1</idoo:pitch_byte1>
+        <idoo:yaw_scale rdf:datatype="&xsd;int">1</idoo:yaw_scale>
+        <idoo:y_channel rdf:datatype="&xsd;int">1</idoo:y_channel>
+        <idoo:yaw_channel rdf:datatype="&xsd;int">2</idoo:yaw_channel>
+        <idoo:BTNS rdf:datatype="&xsd;int">2</idoo:BTNS>
+        <idoo:roll_channel rdf:datatype="&xsd;int">2</idoo:roll_channel>
+        <idoo:x_byte2 rdf:datatype="&xsd;int">2</idoo:x_byte2>
+        <idoo:pitch_channel rdf:datatype="&xsd;int">2</idoo:pitch_channel>
+        <idoo:pitch_byte2 rdf:datatype="&xsd;int">2</idoo:pitch_byte2>
+        <idoo:btn1_channel rdf:datatype="&xsd;int">3</idoo:btn1_channel>
+        <idoo:btn2_channel rdf:datatype="&xsd;int">3</idoo:btn2_channel>
+        <idoo:roll_byte1 rdf:datatype="&xsd;int">3</idoo:roll_byte1>
+        <idoo:y_byte1 rdf:datatype="&xsd;int">3</idoo:y_byte1>
+        <idoo:roll_byte2 rdf:datatype="&xsd;int">4</idoo:roll_byte2>
+        <idoo:y_byte2 rdf:datatype="&xsd;int">4</idoo:y_byte2>
+        <idoo:yaw_byte1 rdf:datatype="&xsd;int">5</idoo:yaw_byte1>
+        <idoo:z_byte1 rdf:datatype="&xsd;int">5</idoo:z_byte1>
+        <idoo:DOF rdf:datatype="&xsd;integer">5</idoo:DOF>
+        <idoo:yaw_byte2 rdf:datatype="&xsd;int">6</idoo:yaw_byte2>
+        <idoo:z_byte2 rdf:datatype="&xsd;int">6</idoo:z_byte2>
+        <idoo:productName rdf:datatype="&xsd;string">Controller (Xbox One For Windows)</idoo:productName>
+        <idoo:isAppropriate rdf:resource="&idoo;Anyone"/>
+        <idoo:hasProperties rdf:resource="&idoo;MultipleAxes"/>
+        <idoo:Executes rdf:resource="&idoo;Rotate"/>
+        <idoo:Executes rdf:resource="&idoo;RotationCamera"/>
+        <idoo:Executes rdf:resource="&idoo;TranslationBricks"/>
+        <ComputerSystem_ODP:usesOperatingSystem rdf:resource="&idoo;Win10"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#XBoxKinect -->
+
+    <owl:NamedIndividual rdf:about="&idoo;XBoxKinect">
+        <rdf:type rdf:resource="&idoo;Isotonic"/>
+        <idoo:isAppropriate rdf:resource="&idoo;Anyone"/>
+        <idoo:hasProperties rdf:resource="&idoo;MultipleAxes"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#YAxis -->
+
+    <owl:NamedIndividual rdf:about="&idoo;YAxis">
+        <rdf:type rdf:resource="&idoo;Linear"/>
+        <idoo:uses_VE rdf:resource="&idoo;Unity"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#ZAxis -->
+
+    <owl:NamedIndividual rdf:about="&idoo;ZAxis">
+        <rdf:type rdf:resource="&idoo;Linear"/>
+        <idoo:uses_VE rdf:resource="&idoo;Unity"/>
+    </owl:NamedIndividual>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Rules
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    <rdf:Description rdf:about="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#a">
+        <rdf:type rdf:resource="&swrl;Variable"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#d">
+        <rdf:type rdf:resource="&swrl;Variable"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#x">
+        <rdf:type rdf:resource="&swrl;Variable"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#y">
+        <rdf:type rdf:resource="&swrl;Variable"/>
+    </rdf:Description>
+    <rdf:Description rdf:about="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#z">
+        <rdf:type rdf:resource="&swrl;Variable"/>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="&swrl;Imp"/>
+        <swrl:body>
+            <rdf:Description>
+                <rdf:type rdf:resource="&swrl;AtomList"/>
+                <rdf:rest>
+                    <rdf:Description>
+                        <rdf:type rdf:resource="&swrl;AtomList"/>
+                        <rdf:rest rdf:resource="&rdf;nil"/>
+                        <rdf:first>
+                            <rdf:Description>
+                                <rdf:type rdf:resource="&swrl;IndividualPropertyAtom"/>
+                                <swrl:propertyPredicate rdf:resource="&idoo;isAppropriate"/>
+                                <swrl:argument1 rdf:resource="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#x"/>
+                                <swrl:argument2 rdf:resource="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#z"/>
+                            </rdf:Description>
+                        </rdf:first>
+                    </rdf:Description>
+                </rdf:rest>
+                <rdf:first>
+                    <rdf:Description>
+                        <rdf:type rdf:resource="&swrl;IndividualPropertyAtom"/>
+                        <swrl:propertyPredicate rdf:resource="&idoo;hasProperties"/>
+                        <swrl:argument1 rdf:resource="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#x"/>
+                        <swrl:argument2 rdf:resource="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#y"/>
+                    </rdf:Description>
+                </rdf:first>
+            </rdf:Description>
+        </swrl:body>
+        <swrl:head>
+            <rdf:Description>
+                <rdf:type rdf:resource="&swrl;AtomList"/>
+                <rdf:rest rdf:resource="&rdf;nil"/>
+                <rdf:first>
+                    <rdf:Description>
+                        <rdf:type rdf:resource="&swrl;IndividualPropertyAtom"/>
+                        <swrl:propertyPredicate rdf:resource="&idoo;Executes"/>
+                        <swrl:argument1 rdf:resource="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#x"/>
+                        <swrl:argument2 rdf:resource="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#z"/>
+                    </rdf:Description>
+                </rdf:first>
+            </rdf:Description>
+        </swrl:head>
+    </rdf:Description>
+    <rdf:Description>
+        <rdf:type rdf:resource="&swrl;Imp"/>
+        <swrl:body>
+            <rdf:Description>
+                <rdf:type rdf:resource="&swrl;AtomList"/>
+                <rdf:rest>
+                    <rdf:Description>
+                        <rdf:type rdf:resource="&swrl;AtomList"/>
+                        <rdf:first>
+                            <rdf:Description>
+                                <rdf:type rdf:resource="&swrl;IndividualPropertyAtom"/>
+                                <swrl:propertyPredicate rdf:resource="&idoo;hasProperties"/>
+                                <swrl:argument2 rdf:resource="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#d"/>
+                                <swrl:argument1 rdf:resource="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#x"/>
+                            </rdf:Description>
+                        </rdf:first>
+                        <rdf:rest>
+                            <rdf:Description>
+                                <rdf:type rdf:resource="&swrl;AtomList"/>
+                                <rdf:rest rdf:resource="&rdf;nil"/>
+                                <rdf:first>
+                                    <rdf:Description>
+                                        <rdf:type rdf:resource="&swrl;IndividualPropertyAtom"/>
+                                        <swrl:propertyPredicate rdf:resource="&idoo;isAppropriate"/>
+                                        <swrl:argument1 rdf:resource="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#x"/>
+                                        <swrl:argument2 rdf:resource="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#y"/>
+                                    </rdf:Description>
+                                </rdf:first>
+                            </rdf:Description>
+                        </rdf:rest>
+                    </rdf:Description>
+                </rdf:rest>
+                <rdf:first>
+                    <rdf:Description>
+                        <rdf:type rdf:resource="&swrl;IndividualPropertyAtom"/>
+                        <swrl:propertyPredicate rdf:resource="&idoo;hasMacros"/>
+                        <swrl:argument1 rdf:resource="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#a"/>
+                        <swrl:argument2 rdf:resource="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#d"/>
+                    </rdf:Description>
+                </rdf:first>
+            </rdf:Description>
+        </swrl:body>
+        <swrl:head>
+            <rdf:Description>
+                <rdf:type rdf:resource="&swrl;AtomList"/>
+                <rdf:rest rdf:resource="&rdf;nil"/>
+                <rdf:first>
+                    <rdf:Description>
+                        <rdf:type rdf:resource="&swrl;IndividualPropertyAtom"/>
+                        <swrl:propertyPredicate rdf:resource="&idoo;Uses"/>
+                        <swrl:argument2 rdf:resource="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#d"/>
+                        <swrl:argument1 rdf:resource="https://personalpages.manchester.ac.uk/staff/mario.sandovalolive/ontology/idoo.owl#x"/>
+                    </rdf:Description>
+                </rdf:first>
+            </rdf:Description>
+        </swrl:head>
+    </rdf:Description>
+</rdf:RDF>
+
+
+
+<!-- Generated by the OWL API (version 3.4.2) http://owlapi.sourceforge.net -->
+
