@@ -6,10 +6,11 @@ from typing import List, Tuple, Optional, Dict
 import json
 from pathlib import Path
 import threading
+import signal
 import sys
+from LISU.datalogging import recordLog
 
 class LisuManager:
-    """Manages a specific LISU input device with minimal feedback."""
     def __init__(self, target_device: str = "Bluetooth_mouse"):
         self.target_device = target_device
         self.device_specs = {}
@@ -20,6 +21,11 @@ class LisuManager:
         config_path = Path(__file__).parent.parent / "data" / "visualisation_config.json"
         self.config = self._load_config(config_path)
         self.actuation = Actuation.Actuation()
+        signal.signal(signal.SIGINT, self.signal_handler)
+
+    def signal_handler(self, sig, frame):
+        recordLog("Received Ctrl+C, stopping")
+        self.running.clear()
 
     def _load_config(self, config_path: Path) -> Dict:
         default_config = {
@@ -36,6 +42,7 @@ class LisuManager:
             return default_config
         except Exception as e:
             print(f"Failed to load config: {e}")
+            recordLog(f"Failed to load config: {e}")
             return default_config
 
     def select_visualisation(self) -> str:
@@ -60,8 +67,10 @@ class LisuManager:
                 if (config.get("vid") == vid and config.get("pid") == pid and 
                     name == self.target_device):
                     print(f"Found target device: {name} (VID: {vid}, PID: {pid})")
+                    recordLog(f"Found target device: {name} (VID: {vid}, PID: {pid})")
                     return (vid, pid, name, config)
         print(f"Target device '{self.target_device}' not found.")
+        recordLog(f"Target device '{self.target_device}' not found.")
         return None
 
     def configure_device(self, vid: str, pid: str, name: str, dev_config: Dict) -> Optional[InputDevice]:
@@ -81,18 +90,21 @@ class LisuManager:
             device.button_callback = self._toggle_buttons
             self.dev_name = name
             print(f"Configured {name} successfully")
+            recordLog(f"Configured {name} successfully")
             return device
         except Exception as e:
             print(f"Failed to configure {name}: {e}")
+            recordLog(f"Failed to configure {name}: {e}")
             return None
 
     def _process_mouse_state(self, state: Dict, deadzone: float, scale_factor: float, mapping: Dict, dev_config: Dict) -> None:
         if not self.running.is_set():
             return
-        x = state.get("x", 0.0) * scale_factor if abs(state.get("x", 0.0)) > deadzone else 0.0
+        x = state.get("x", 0.0)  # Already -1 to 1 from devices.py
         vec_input = [x, 0.0, 0.0]
         command = self.config["actuation"]["commands"].get(dev_config.get("command", "mouse"), "addrotation %.3f %.3f %.3f %s")
-        print(f"Calling actuation for {self.dev_name} with input: {vec_input}")  # Debug
+        print(f"Calling actuation for {self.dev_name} with input: {vec_input}")
+        recordLog(f"Calling actuation for {self.dev_name} with input: {vec_input}")
         self.actuation.process_input(vec_input, self.dev_name, command)
 
     def _process_state(self, state: Dict, deadzone: float, scale_factor: float, dev_config: Dict) -> None:
@@ -104,7 +116,8 @@ class LisuManager:
             state.get("z", 0.0) * scale_factor if abs(state.get("z", 0.0)) > deadzone else 0.0
         ]
         command = self.config["actuation"]["commands"].get(dev_config.get("command", "default"), "addrotation %.3f %.3f %.3f %s")
-        print(f"Calling actuation for {self.dev_name} with input: {vec_input}")  # Debug
+        print(f"Calling actuation for {self.dev_name} with input: {vec_input}")
+        recordLog(f"Calling actuation for {self.dev_name} with input: {vec_input}")
         self.actuation.process_input(vec_input, self.dev_name, command)
 
     def _toggle_buttons(self, state: Dict, buttons: List[int]) -> None:
@@ -112,6 +125,7 @@ class LisuManager:
             return
         if buttons and buttons[0] == 1:
             print(f"Button pressed on {self.dev_name}")
+            recordLog(f"Button pressed on {self.dev_name}")
 
     def run(self) -> None:
         visualisation = self.select_visualisation()
@@ -126,15 +140,18 @@ class LisuManager:
             self.active_device = device
             print(f"Activating {name} for {visualisation}")
             print("[Press Ctrl+C to stop...]")
+            recordLog(f"Activating {name} for {visualisation}")
             try:
                 while self.running.is_set() and device.device.is_plugged():
-                    pass  # Let HID thread handle actuation via callback
-            except KeyboardInterrupt:
-                print("\nStopping...")
+                    threading.Event().wait(0.1)
+            except Exception as e:
+                print(f"Unexpected error in run loop: {e}")
+                recordLog(f"Unexpected error in run loop: {e}")
             finally:
                 self.running.clear()
                 device.close()
                 print(f"Closed {name}")
+                recordLog(f"Closed {name}")
                 sys.exit(0)
 
 if __name__ == "__main__":
