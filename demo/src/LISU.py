@@ -1,11 +1,18 @@
-import hid
+import sys
+from pathlib import Path
+
+# Add the project directory to the Python path
+project_dir = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(project_dir))
+
+import pywinusb.hid as hid
 import qprompt
 from typing import List, Tuple, Optional, Dict
-from src.LISU.devices import InputDevice
-from src.LISU.datasource import LisuOntology
-from src.actuation import Actuation, xAxisChangeHandler, changeActuationHandler
+import Actuation
+from LISU.devices import InputDevice
+from LISU.datasource import LisuOntology
+import Controllers
 import json
-from pathlib import Path
 
 class LisuManager:
     """Manages LISU input devices and actuation with dynamic visualisation and configuration."""
@@ -15,7 +22,7 @@ class LisuManager:
         self.dev_name = ""
         config_path = Path("./data/visualisation_config.json")
         self.config = self._load_config(config_path)
-        self.actuation = Actuation()
+        self.actuation = Actuation.Actuation()
 
     def _load_config(self, config_path: Path) -> Dict:
         """Load configuration from JSON or use defaults."""
