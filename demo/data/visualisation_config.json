@@ -16,7 +16,7 @@
     ]
   },
   "visualization": {
-    "selected": "3d_model_view",  # Example visualization (e.g., Drishti 3D view)
+    "selected": "3d_model_view", 
     "render_options": {
       "resolution": "1920x1080",
       "color_scheme": "default",
