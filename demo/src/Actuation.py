@@ -23,7 +23,7 @@ class ActuationConfig:
                 },
                 "commands": ["addrotation %.3f %.3f %.3f %s", "addrotationclip %.3f %.3f %.3f %s"]
             },
-            "visualization": {
+            "visualisation": {
                 "selected": "3d_model_view",
                 "render_options": {
                     "resolution": "1920x1080",
