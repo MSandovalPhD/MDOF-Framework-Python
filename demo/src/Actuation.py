@@ -110,6 +110,7 @@ class Actuation:
             print(f"{dev_name} : {message}")
             try:
                 self.sock.sendto(message.encode(), (self.udp_ip, self.udp_port))
+                print(f"UDP instruction sent to {self.udp_ip}:{self.udp_port}: {message}")
             except socket.error as e:
                 print(f"Failed to send packet: {e}")
             self.config.count_state = 0
