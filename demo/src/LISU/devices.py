@@ -43,7 +43,7 @@ class InputDevice:
         }
 
     def open(self) -> None:
-        """Open connection to the device."""
+        """Open connection to the device, setting raw data handler."""
         if not self.device:
             self.device = hid.HidDeviceFilter(vendor_id=self.vid, product_id=self.pid).get_devices()[0]
             self.device.open()
@@ -56,20 +56,12 @@ class InputDevice:
             self.device = None
 
     def process(self, data: List[int]) -> None:
-        """Process raw HID data to update device state and trigger callbacks, applying dynamic calibration."""
+        """Process raw HID data to update device state and trigger callbacks."""
         max_len = len(data)
-        actuation = Actuation()  # Create instance to access calibration
-        cal = actuation.config.calibration_settings
-        deadzone = float(cal.get("deadzone", 0.25))
-        scale_factor = float(cal.get("scale_factor", 1.0))
-
         for axis, spec in self.specs["axes"].items():
             if (spec["channel"] != -1 and data[0] == spec["channel"] and 
                 spec["byte1"] < max_len and spec["byte2"] < max_len):
-                self.state[axis] = (to_int16(data[spec["byte1"]], data[spec["byte2"]]) / 
-                                  spec["scale"] * scale_factor if 
-                                  abs(to_int16(data[spec["byte1"]], data[spec["byte2"]]) / spec["scale"]) > deadzone 
-                                  else 0.0)
+                self.state[axis] = to_int16(data[spec["byte1"]], data[spec["byte2"]]) / spec["scale"]
 
         for idx, btn in enumerate(self.specs["buttons"]):
             if (btn["channel"] != -1 and data[0] == btn["channel"] and btn["byte"] < max_len):
