@@ -1,8 +1,5 @@
 import Actuation
 from LISU.devices import InputDevice
-from LISU.datasource import LisuOntology
-from Controllers import Controllers
-
 import pywinusb.hid as hid
 from time import sleep
 import qprompt
@@ -11,8 +8,9 @@ import json
 from pathlib import Path
 
 class LisuManager:
-    """Manages LISU input devices and actuation with dynamic visualisation and configuration."""
-    def __init__(self):
+    """Manages a specific LISU input device with minimal feedback."""
+    def __init__(self, target_device: str = "Bluetooth_mouse"):
+        self.target_device = target_device
         self.device_specs = {}
         self.active_device = None
         self.dev_name = ""
@@ -51,55 +49,29 @@ class LisuManager:
         print(f"Selected visualisation: {selected}")
         return selected
 
-    def detect_devices(self, use_ontology: bool = False) -> List[Tuple[str, str, str, Dict]]:
-        """Detect connected input devices and match with JSON config."""
-        devices = []
+    def detect_devices(self) -> Optional[Tuple[str, str, str, Dict]]:
+        """Detect the target input device and return its details if found."""
         all_hids = hid.find_all_hid_devices()
         input_devices = self.config["input_devices"]
 
         for device in all_hids:
             vid = f"{device.vendor_id:04x}".lower()
             pid = f"{device.product_id:04x}".lower()
-            dev_config = None
-            dev_name = f"Generic_Device_{len(devices) + 1}"
-
-            # Match with JSON config
             for name, config in input_devices.items():
-                if config.get("vid") == vid and config.get("pid") == pid:
-                    dev_name = name
-                    dev_config = config
-                    break
-
-            # Fallback to ontology only if use_ontology is True
-            if not dev_config and use_ontology:
-                ontology = LisuOntology(vid=vid, pid=pid)
-                attrs = ontology.get_device_attributes()
-                if attrs:
-                    dev_name = attrs[0]["name"]
-                    dev_config = {"type": attrs[0]["type"], "axes": ["x"] * int(attrs[0]["dof"]), "buttons": ["btn"] * int(attrs[0]["btns"])}
-
-            devices.append((vid, pid, dev_name, dev_config or {"type": "unknown", "library": "pywinusb", "axes": ["x"], "buttons": []}))
-
-        print("Detected Input Devices:")
-        for vid, pid, name, config in devices:
-            print(f"VID: {vid}, PID: {pid}, Name: {name}, Config: {config}")
-        return devices
+                if (config.get("vid") == vid and config.get("pid") == pid and 
+                    name == self.target_device):
+                    print(f"Found target device: {name} (VID: {vid}, PID: {pid})")
+                    return (vid, pid, name, config)
+        
+        print(f"Target device '{self.target_device}' not found.")
+        return None
 
     def configure_device(self, vid: str, pid: str, name: str, dev_config: Dict) -> Optional[InputDevice]:
-        """Configure a device based on its config."""
+        """Configure the target device."""
         try:
-            print(f"Configuring - VID: {vid}, PID: {pid}, Name: {name}")
-            library = dev_config.get("library", "pywinusb")
-            if library != "pywinusb":
-                print(f"Unsupported library {library} for {name}, falling back to pywinusb")
-                library = "pywinusb"
-
-            # Ensure vid and pid are valid hex strings
-            if not all(c in '0123456789abcdef' for c in vid.lower()) or not all(c in '0123456789abcdef' for c in pid.lower()):
-                raise ValueError(f"Invalid hex string - VID: {vid}, PID: {pid}")
-
-            # Pass vid and pid as integers to InputDevice
-            device = InputDevice(int(vid, 16), int(pid, 16), name)
+            vid_int = int(vid, 16)
+            pid_int = int(pid, 16)
+            device = InputDevice(vid_int, pid_int, name, dev_config)
             device.open()
 
             cal = self.config["calibration"]["devices"].get(name, self.config["calibration"]["default"])
@@ -114,11 +86,8 @@ class LisuManager:
 
             device.button_callback = self._toggle_buttons
             self.dev_name = name
-            print(f"Configured {name} with {library}")
+            print(f"Configured {name} successfully")
             return device
-        except ValueError as e:
-            print(f"Failed to configure {name}: {e}")
-            return None
         except Exception as e:
             print(f"Failed to configure {name}: {e}")
             return None
@@ -146,30 +115,29 @@ class LisuManager:
             print(f"Button pressed on {self.dev_name}")
 
     def run(self) -> None:
-        """Run the LISU framework workflow."""
+        """Run the LISU framework for the target device."""
         visualisation = self.select_visualisation()
-        devices = self.detect_devices(use_ontology=False)  # Skip ontology by default
-        if not devices:
-            print("No devices detected. Exiting.")
+        device_info = self.detect_devices()
+        
+        if not device_info:
+            print("Exiting due to no target device found.")
             return
 
-        for vid, pid, name, dev_config in devices:
-            device = self.configure_device(vid, pid, name, dev_config)
-            if device:
-                self.active_device = device
-                print(f"Activating {name} for {visualisation}")
-                while not self._kbhit() and (device.device.is_plugged() if device.device else False):
+        vid, pid, name, dev_config = device_info
+        device = self.configure_device(vid, pid, name, dev_config)
+        if device:
+            self.active_device = device
+            print(f"Activating {name} for {visualisation}")
+            print("[Press Ctrl+C to stop...]")
+            try:
+                while device.device.is_plugged():
                     sleep(0.5)
+            except KeyboardInterrupt:
+                print("\nStopping...")
+            finally:
                 device.close()
-
-    def _kbhit(self) -> bool:
-        """Check for keyboard input (Windows-specific)."""
-        try:
-            from msvcrt import kbhit
-            return kbhit()
-        except ImportError:
-            return False
+                print(f"Closed {name}")
 
 if __name__ == "__main__":
-    lisu = LisuManager()
+    lisu = LisuManager(target_device="Bluetooth_mouse")
     lisu.run()
