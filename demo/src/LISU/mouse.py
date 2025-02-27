@@ -1,7 +1,15 @@
+import sys
+from pathlib import Path
+
+# Add the project directory to the Python path
+project_dir = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(project_dir))
+
 from threading import Thread
 from time import sleep
 from typing import Optional
 import mouse
+from LISU.devices import InputDevice
 
 VELOCITY = 0.3
 SPF = 0.016
