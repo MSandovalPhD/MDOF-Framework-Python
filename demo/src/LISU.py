@@ -43,7 +43,7 @@ class LisuManager:
         print("Available 3D Visualisations:")
         for i, vis in enumerate(options, 1):
             print(f"{i}. {vis}")
-        choice = qprompt.ask(f"Select a visualisation (1-{len(options)}): ", int, min=1, max=len(options))
+        choice = qprompt.ask(f"Select a visualisation (1-{len(options)})", int, min=1, max=len(options))
         selected = options[choice - 1]
         self.config["visualisation"]["selected"] = selected
         print(f"Selected visualisation: {selected}")
@@ -128,15 +128,19 @@ class LisuManager:
         if device:
             self.active_device = device
             print(f"Activating {name} for {visualisation}")
-            print("[Press Ctrl+C to stop...]")
-            try:
-                while device.device.is_plugged():
-                    sleep(0.5)
-            except KeyboardInterrupt:
-                print("\nStopping...")
-            finally:
-                device.close()
-                print(f"Closed {name}")
+            print("[Press Enter to stop...]")
+            while not self._kbhit() and (device.device.is_plugged() if device.device else False):
+                sleep(0.5)
+            device.close()
+            print(f"Closed {name}")
+
+    def _kbhit(self) -> bool:
+        """Check for keyboard input (Windows-specific)."""
+        try:            
+            from msvcrt import kbhit
+            return kbhit()
+        except ImportError:
+            return False
 
 if __name__ == "__main__":
     lisu = LisuManager(target_device="Bluetooth_mouse")
