@@ -7,7 +7,6 @@ from pathlib import Path
 ONTOLOGY_ADDRESS = "./data/idoo.owl"
 
 class LisuOntology:
-    """Simplified interface for querying LISU ontology data."""
     def __init__(self, vid: str = "", pid: str = "", controller_name: str = ""):
         if vid and not all(c in '0123456789abcdefABCDEF' for c in vid):
             raise ValueError("VID must be a hexadecimal string")
@@ -16,8 +15,8 @@ class LisuOntology:
         if controller_name and not isinstance(controller_name, str):
             raise ValueError("controller_name must be a string")
 
-        self.vid = vid
-        self.pid = pid
+        self.vid = vid.lower()  # Ensure lowercase for consistency
+        self.pid = pid.lower()  # Ensure lowercase for consistency
         self.controller_name = controller_name
         self.header = """PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX owl: <http://www.w3.org/2002/07/owl#>
@@ -56,7 +55,7 @@ WHERE
     ?controller lisu:VID ?VID .
     ?controller lisu:PID ?PID .
     ?controller lisu:isAppropriate ?level .
-    FILTER(?VID = "{self.vid}" && ?PID = "{self.pid}")
+    FILTER(str(?VID) = "{self.vid.upper()}" && str(?PID) = "{self.pid.upper()}")
 }}
 GROUP BY ?name ?level"""
         result = self._query(query_string)
@@ -114,7 +113,7 @@ WHERE {{
     OPTIONAL {{ ?controller lisu:btn2_channel ?btn2_channel . }}
     OPTIONAL {{ ?controller lisu:btn2_byte ?btn2_byte . }}
     OPTIONAL {{ ?controller lisu:btn2_bit ?btn2_bit . }}
-    FILTER(?VID = "{self.vid}" && ?PID = "{self.pid}")
+    FILTER(str(?VID) = "{self.vid.upper()}" && str(?PID) = "{self.pid.upper()}")
 }}
 GROUP BY ?name ?type
          ?x_channel ?x_byte1 ?x_byte2 ?x_scale
