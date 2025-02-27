@@ -1,0 +1,35 @@
+{
+  "actuation": {
+    "config": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "angle": 20.0,
+      "speed": 120.0,
+      "fps": 20,
+      "idx": 0,
+      "idx2": 1,
+      "count_state": 0
+    },
+    "commands": [
+      "addrotation %.3f %.3f %.3f %s"
+    ]
+  },
+  "visualization": {
+    "selected": "3d_model_view",  # Example visualization (e.g., Drishti 3D view)
+    "render_options": {
+      "resolution": "1920x1080",
+      "color_scheme": "default",
+      "transparency": 0.5
+    }
+  },
+  "calibration": {
+    "deadzone": 0.25,
+    "scale_factor": 1.0,
+    "axis_mapping": {
+      "x": "left_stick_lr",
+      "y": "left_stick_ud",
+      "z": "right_trigger"
+    }
+  }
+}
