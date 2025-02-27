@@ -18,6 +18,7 @@ class LisuManager:
         self.dev_name = ""
         self.running = threading.Event()
         self.running.set()
+        self.use_y_axis = False  # Toggle for x or y axis
         config_path = Path(__file__).parent.parent / "data" / "visualisation_config.json"
         self.config = self._load_config(config_path)
         self.actuation = Actuation.Actuation()
@@ -101,10 +102,14 @@ class LisuManager:
         if not self.running.is_set():
             return
         x = state.get("x", 0.0)  # Already -1 to 1 from devices.py
-        vec_input = [x, 0.0, 0.0]
+        if self.use_y_axis:
+            vec_input = [0.0, x, 0.0]  # Use x value for y-axis
+            recordLog(f"Using y-axis for {self.dev_name}: {vec_input}")
+        else:
+            vec_input = [x, 0.0, 0.0]  # Default x-axis
+            recordLog(f"Using x-axis for {self.dev_name}: {vec_input}")
         command = self.config["actuation"]["commands"].get(dev_config.get("command", "mouse"), "addrotation %.3f %.3f %.3f %s")
         print(f"Calling actuation for {self.dev_name} with input: {vec_input}")
-        recordLog(f"Calling actuation for {self.dev_name} with input: {vec_input}")
         self.actuation.process_input(vec_input, self.dev_name, command)
 
     def _process_state(self, state: Dict, deadzone: float, scale_factor: float, dev_config: Dict) -> None:
@@ -124,8 +129,10 @@ class LisuManager:
         if not self.running.is_set():
             return
         if buttons and buttons[0] == 1:
-            print(f"Button pressed on {self.dev_name}")
-            recordLog(f"Button pressed on {self.dev_name}")
+            self.use_y_axis = not self.use_y_axis  # Toggle between x and y
+            axis = "y" if self.use_y_axis else "x"
+            print(f"Button pressed on {self.dev_name}, switched to {axis}-axis")
+            recordLog(f"Button pressed on {self.dev_name}, switched to {axis}-axis")
 
     def run(self) -> None:
         visualisation = self.select_visualisation()
