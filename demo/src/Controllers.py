@@ -1,15 +1,9 @@
-import sys
-from pathlib import Path
-
-# Add the project directory to the Python path
-project_dir = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(project_dir))
-
 from LISU.devices import InputDevice
 from LISU.datasource import LisuOntology
 from LISU.getcontrollers import LisuControllers
 from Actuation import Actuation, xAxisChangeHandler, yAxisChangeHandler, zAxisChangeHandler, changeActuationHandler
 from typing import Callable, Optional, Dict
+from pathlib import Path
 
 class Controllers:
     """Manages generic input devices via ontology, using dynamic configuration from JSON."""

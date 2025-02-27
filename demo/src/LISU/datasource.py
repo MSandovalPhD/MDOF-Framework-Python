@@ -1,14 +1,8 @@
-import sys
-from pathlib import Path
-
-# Add the project directory to the Python path
-project_dir = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(project_dir))
-
 from rdflib import Graph
 from rdflib.query import Result
 from typing import List, Any, Optional, Union
 from LISU.datalogging import recordLog
+from pathlib import Path
 
 ONTOLOGY_ADDRESS = "./data/idoo.owl"
 

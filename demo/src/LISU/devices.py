@@ -1,14 +1,8 @@
-import sys
-from pathlib import Path
-
-# Add the project directory to the Python path
-project_dir = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(project_dir))
-
 from typing import Dict, List, Tuple, Optional, Callable
 from LISU.datasource import LisuOntology
 import pywinusb.hid as hid
 from timeit import default_timer as high_acc_clock
+from pathlib import Path
 
 class InputDevice:
     """Generic representation of any input device, configured via ontology and dynamic config."""
