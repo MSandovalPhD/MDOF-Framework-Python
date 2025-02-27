@@ -4,6 +4,7 @@ import pywinusb.hid as hid
 from timeit import default_timer as high_acc_clock
 
 class InputDevice:
+    """Generic representation of any input device, configured via ontology and dynamic config."""
     def __init__(self, vid: int, pid: int, name: str):
         self.vid = vid
         self.pid = pid
@@ -18,6 +19,7 @@ class InputDevice:
         self.button_callback: Optional[Callable] = None
 
     def _load_specs(self) -> Dict:
+        """Load device specifications from the ontology, including optional properties."""
         ontology = LisuOntology(vid=hex(self.vid), pid=hex(self.pid))
         device_attrs = ontology.get_device_attributes()
         if not device_attrs:
@@ -27,36 +29,50 @@ class InputDevice:
         return {
             "axes": {
                 axis: {
-                    "channel": int(spec[f"{axis}_channel"]),
-                    "byte1": int(spec[f"{axis}_byte1"]),
-                    "byte2": int(spec[f"{axis}_byte2"]),
-                    "scale": int(spec[f"{axis}_scale"])
+                    "channel": int(spec.get(f"{axis}_channel", -1)),
+                    "byte1": int(spec.get(f"{axis}_byte1", -1)),
+                    "byte2": int(spec.get(f"{axis}_byte2", -1)),
+                    "scale": int(spec.get(f"{axis}_scale", 350))
                 } for axis in ["x", "y", "z", "pitch", "roll", "yaw"] if f"{axis}_channel" in spec
             },
             "buttons": [
-                {"channel": int(spec["btn1_channel"]), "byte": int(spec["btn1_byte"]), "bit": int(spec["btn1_bit"])},
-                {"channel": int(spec["btn2_channel"]), "byte": int(spec["btn2_byte"]), "bit": int(spec["btn2_bit"])}
-            ]
+                {"channel": int(spec.get("btn1_channel", -1)), "byte": int(spec.get("btn1_byte", -1)), "bit": int(spec.get("btn1_bit", -1))},
+                {"channel": int(spec.get("btn2_channel", -1)), "byte": int(spec.get("btn2_byte", -1)), "bit": int(spec.get("btn2_bit", -1))}
+            ],
+            "type": spec.get("type", "unknown")
         }
 
     def open(self) -> None:
+        """Open connection to the device."""
         if not self.device:
             self.device = hid.HidDeviceFilter(vendor_id=self.vid, product_id=self.pid).get_devices()[0]
             self.device.open()
+            self.device.set_raw_data_handler(self.process)
 
     def close(self) -> None:
+        """Close the device connection."""
         if self.device:
             self.device.close()
             self.device = None
 
     def process(self, data: List[int]) -> None:
+        """Process raw HID data to update device state and trigger callbacks, applying dynamic calibration."""
         max_len = len(data)
+        actuation = Actuation()  # Create instance to access calibration
+        cal = actuation.config.calibration_settings
+        deadzone = float(cal.get("deadzone", 0.25))
+        scale_factor = float(cal.get("scale_factor", 1.0))
+
         for axis, spec in self.specs["axes"].items():
-            if data[0] == spec["channel"] and spec["byte1"] < max_len and spec["byte2"] < max_len:
-                self.state[axis] = to_int16(data[spec["byte1"]], data[spec["byte2"]]) / spec["scale"]
+            if (spec["channel"] != -1 and data[0] == spec["channel"] and 
+                spec["byte1"] < max_len and spec["byte2"] < max_len):
+                self.state[axis] = (to_int16(data[spec["byte1"]], data[spec["byte2"]]) / 
+                                  spec["scale"] * scale_factor if 
+                                  abs(to_int16(data[spec["byte1"]], data[spec["byte2"]]) / spec["scale"]) > deadzone 
+                                  else 0.0)
 
         for idx, btn in enumerate(self.specs["buttons"]):
-            if data[0] == btn["channel"] and btn["byte"] < max_len:
+            if (btn["channel"] != -1 and data[0] == btn["channel"] and btn["byte"] < max_len):
                 mask = 1 << btn["bit"]
                 self.state["buttons"][idx] = 1 if data[btn["byte"]] & mask else 0
 
@@ -67,10 +83,12 @@ class InputDevice:
             self.button_callback(self.state, self.state["buttons"])
 
 def to_int16(y1: int, y2: int) -> int:
+    """Convert two bytes to a signed 16-bit integer."""
     x = (y1) | (y2 << 8)
     return x - 65536 if x >= 32768 else x
 
 class LisuDevControllers:
+    """Manages generic input devices via ontology."""
     def __init__(self, vid_id: int, pid_id: int):
         self.devices = {
             device["name"]: InputDevice(vid_id, pid_id, device["name"])
