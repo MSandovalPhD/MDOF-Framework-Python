@@ -23,7 +23,7 @@ class InputDevice:
         buttons = self.dev_config.get("buttons", [])
         dev_type = self.dev_config.get("type", "unknown")
         return {
-            "axes": {axis: {"channel": -1, "byte1": -1, "byte2": -1, "scale": 127} for axis in axes},  # Max mouse delta
+            "axes": {axis: {"channel": -1, "byte1": -1, "byte2": -1, "scale": 127} for axis in axes},
             "buttons": [{"channel": -1, "byte": idx, "bit": 0} for idx in range(len(buttons))],
             "type": dev_type
         }
@@ -45,9 +45,9 @@ class InputDevice:
         recordLog(f"Raw HID data for {self.name}: {data}")
         max_len = len(data)
         if max_len > 1:
-            # Mouse x-axis delta (byte 1), normalize to -1 to 1
-            x_raw = data[1] if data[1] <= 127 else data[1] - 256  # Convert to signed -128 to 127
-            self.state["x"] = x_raw / 127.0  # Scale to -1 to 1
+            # Mouse x-delta in byte 1, signed -127 to 127
+            x_raw = data[1] if data[1] <= 127 else data[1] - 256
+            self.state["x"] = min(max(x_raw / 127.0, -1.0), 1.0)  # Normalize and clamp to -1 to 1
         for idx, btn in enumerate(self.specs["buttons"]):
             if btn["byte"] < max_len:
                 self.state["buttons"][idx] = 1 if data[btn["byte"]] & 0x01 else 0
