@@ -1,7 +1,7 @@
 import hid
 from multiprocessing import Process, Queue
 from time import sleep
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict
 
 from src.LISU.devices import InputDevice
 from src.controllers import Controllers
@@ -10,6 +10,7 @@ import pygame
 from src.LISU.datasource import LisuOntology
 
 class LisuManager:
+    """Manages LISU input devices and actuation for MDOF systems with dynamic configuration."""
     def __init__(self):
         self.device_specs = {}
         self.active_device = None
@@ -21,11 +22,13 @@ class LisuManager:
         self.actuation = Actuation()
 
     def _load_actuation_commands(self) -> List[str]:
+        """Load actuation commands dynamically from the ontology or JSON."""
         ontology = LisuOntology()
         commands = ontology.get_actuation_commands()
-        return commands if commands else ["addrotation %.3f %.3f %.3f %s", "addrotationclip %.3f %.3f %.3f %s"]
+        return commands if commands else ["addrotation %.3f %.3f %.3f %s"]
 
     def list_devices(self) -> List[str]:
+        """List all connected devices matching supported specs."""
         devices = []
         all_hids = hid.find_all_hid_devices()
         for device in all_hids:
@@ -35,6 +38,7 @@ class LisuManager:
         return devices
 
     def start_device(self, vendor_id: int, product_id: int, device_type: str = "gamepad") -> Optional[InputDevice]:
+        """Initialize and run any input device (gamepad, 3D, etc.) based on ontology and dynamic config."""
         try:
             dev_filter = hid.HidDeviceFilter(vendor_id=vendor_id, product_id=product_id)
             all_hids = dev_filter.get_devices()
@@ -63,21 +67,29 @@ class LisuManager:
             print(f"Failed to start device: {e}")
             return None
 
-    def _process_state(self, state: dict) -> None:
+    def _process_state(self, state: Dict) -> None:
+        """Process generic device state, applying calibration from dynamic config."""
+        actuation = self.actuation  # Ensure access to the same Actuation instance
+        cal = actuation.config.calibration_settings
+        deadzone = float(cal.get("deadzone", 0.25))
+        scale_factor = float(cal.get("scale_factor", 1.0))
+        
         vec_input = [
-            -state.get("x", 0.0) if abs(state.get("x", 0.0)) > 0.3 else 0.0,
-            -state.get("y", 0.0) if abs(state.get("y", 0.0)) > 0.2 else 0.0,
-            state.get("z", 0.0) if abs(state.get("z", 0.0)) > 0.2 else 0.0
+            -state.get("x", 0.0) * scale_factor if abs(state.get("x", 0.0)) > deadzone else 0.0,
+            -state.get("y", 0.0) * scale_factor if abs(state.get("y", 0.0)) > deadzone else 0.0,
+            state.get("z", 0.0) * scale_factor if abs(state.get("z", 0.0)) > deadzone else 0.0
         ]
-        self.actuation.process_input(vec_input, self.dev_name)
+        actuation.process_input(vec_input, self.dev_name)
 
-    def _toggle_buttons(self, state: dict, buttons: List[int]) -> None:
+    def _toggle_buttons(self, state: Dict, buttons: List[int]) -> None:
+        """Handle generic button events, using dynamic config for mapping if needed."""
         if buttons[0] == 1:
-            self.actuation.change_actuation(1)
+            changeActuationHandler(1, self.actuation)
         if buttons[1] == 1 and len(buttons) > 1:
-            self.actuation.adjust_sensitivity(1)
+            subAngleHandler(1, self.actuation)
 
     def activate_devices(self, device_list: List[Tuple[int, int]]) -> None:
+        """Activate multiple devices in parallel using generic device handling."""
         processes = []
         queue = Queue()
         for vid, pid in device_list:
@@ -90,6 +102,7 @@ class LisuManager:
             print(queue.get())
 
     def _run_device(self, vendor_id: int, product_id: int, queue: Queue) -> None:
+        """Run a single device process with generic handling."""
         try:
             device = self.start_device(vendor_id, product_id, "generic")
             queue.put(f"Started {self.dev_name}")
@@ -97,6 +110,7 @@ class LisuManager:
             queue.put(f"Error with {vendor_id}/{product_id}: {e}")
 
     def _kbhit(self) -> bool:
+        """Check for keyboard input (Windows-specific; replace for cross-platform)."""
         try:
             from msvcrt import kbhit
             return kbhit()
