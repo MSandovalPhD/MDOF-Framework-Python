@@ -1,13 +1,11 @@
 from rdflib import Graph
 from rdflib.query import Result
 from typing import List, Any, Optional, Union
-from src.LISU.datalogging import recordLog  # For logging errors
+from src.LISU.datalogging import recordLog
 
-# Ontology file path (relative to script root)
 ONTOLOGY_ADDRESS = "./data/idoo.owl"
 
 class LisuOntology:
-    """Simplified interface for querying LISU ontology data. Uses a cached Graph for performance."""
     def __init__(self, vid: str = "", pid: str = "", controller_name: str = ""):
         if vid and not all(c in '0123456789abcdefABCDEF' for c in vid):
             raise ValueError("VID must be a hexadecimal string")
@@ -24,10 +22,9 @@ PREFIX owl: <http://www.w3.org/2002/07/owl#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX lisu: <https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#>"""
-        self._graph: Optional[Graph] = None  # Cache Graph instance
+        self._graph: Optional[Graph] = None
 
     def _query(self, query_string: str) -> Result:
-        """Execute an RDF query on the ontology, caching the Graph."""
         if self._graph is None:
             self._graph = Graph()
             try:
@@ -37,7 +34,7 @@ PREFIX lisu: <https://personalpages.manchester.ac.uk/postgrad/mario.sandovaloliv
                 return Result([])
             except Exception as e:
                 recordLog(f"Failed to parse ontology: {e}")
-                self._graph = Graph()  # Fallback empty graph
+                self._graph = Graph()
         try:
             return self._graph.query(query_string)
         except Exception as e:
@@ -45,7 +42,6 @@ PREFIX lisu: <https://personalpages.manchester.ac.uk/postgrad/mario.sandovaloliv
             return Result([])
 
     def get_controller_attributes(self) -> dict:
-        """Get basic attributes (name, level) for a specific controller."""
         if not self.vid or not self.pid:
             return {}
         query_string = f""" {self.header}
@@ -65,11 +61,10 @@ GROUP BY ?name ?level"""
         return {}
 
     def get_device_attributes(self) -> List[dict]:
-        """Get detailed device attributes for a specific controller."""
         if not self.vid or not self.pid:
             return []
         query_string = f""" {self.header}
-SELECT ?name
+SELECT ?name ?type
 ?x_channel ?x_byte1 ?x_byte2 ?x_scale
 ?y_channel ?y_byte1 ?y_byte2 ?y_scale
 ?z_channel ?z_byte1 ?z_byte2 ?z_scale
@@ -83,39 +78,40 @@ WHERE
     ?controller lisu:productName ?name .
     ?controller lisu:VID ?VID .
     ?controller lisu:PID ?PID .
-    ?controller lisu:x_channel ?x_channel .
-    ?controller lisu:x_byte1 ?x_byte1 .
-    ?controller lisu:x_byte2 ?x_byte2 .
-    ?controller lisu:x_scale ?x_scale .
-    ?controller lisu:y_channel ?y_channel .
-    ?controller lisu:y_byte1 ?y_byte1 .
-    ?controller lisu:y_byte2 ?y_byte2 .
-    ?controller lisu:y_scale ?y_scale .
-    ?controller lisu:z_channel ?z_channel .
-    ?controller lisu:z_byte1 ?z_byte1 .
-    ?controller lisu:z_byte2 ?z_byte2 .
-    ?controller lisu:z_scale ?z_scale .
-    ?controller lisu:pitch_channel ?pitch_channel .
-    ?controller lisu:pitch_byte1 ?pitch_byte1 .
-    ?controller lisu:pitch_byte2 ?pitch_byte2 .
-    ?controller lisu:pitch_scale ?pitch_scale .
-    ?controller lisu:roll_channel ?roll_channel .
-    ?controller lisu:roll_byte1 ?roll_byte1 .
-    ?controller lisu:roll_byte2 ?roll_byte2 .
-    ?controller lisu:roll_scale ?roll_scale .
-    ?controller lisu:yaw_channel ?yaw_channel .
-    ?controller lisu:yaw_byte1 ?yaw_byte1 .
-    ?controller lisu:yaw_byte2 ?yaw_byte2 .
-    ?controller lisu:yaw_scale ?yaw_scale .
-    ?controller lisu:btn1_channel ?btn1_channel .
-    ?controller lisu:btn1_byte ?btn1_byte .
-    ?controller lisu:btn1_bit ?btn1_bit .
-    ?controller lisu:btn2_channel ?btn2_channel .
-    ?controller lisu:btn2_byte ?btn2_byte .
-    ?controller lisu:btn2_bit ?btn2_bit .
+    OPTIONAL { ?controller lisu:deviceType ?type . }
+    OPTIONAL { ?controller lisu:x_channel ?x_channel . }
+    OPTIONAL { ?controller lisu:x_byte1 ?x_byte1 . }
+    OPTIONAL { ?controller lisu:x_byte2 ?x_byte2 . }
+    OPTIONAL { ?controller lisu:x_scale ?x_scale . }
+    OPTIONAL { ?controller lisu:y_channel ?y_channel . }
+    OPTIONAL { ?controller lisu:y_byte1 ?y_byte1 . }
+    OPTIONAL { ?controller lisu:y_byte2 ?y_byte2 . }
+    OPTIONAL { ?controller lisu:y_scale ?y_scale . }
+    OPTIONAL { ?controller lisu:z_channel ?z_channel . }
+    OPTIONAL { ?controller lisu:z_byte1 ?z_byte1 . }
+    OPTIONAL { ?controller lisu:z_byte2 ?z_byte2 . }
+    OPTIONAL { ?controller lisu:z_scale ?z_scale . }
+    OPTIONAL { ?controller lisu:pitch_channel ?pitch_channel . }
+    OPTIONAL { ?controller lisu:pitch_byte1 ?pitch_byte1 . }
+    OPTIONAL { ?controller lisu:pitch_byte2 ?pitch_byte2 . }
+    OPTIONAL { ?controller lisu:pitch_scale ?pitch_scale . }
+    OPTIONAL { ?controller lisu:roll_channel ?roll_channel . }
+    OPTIONAL { ?controller lisu:roll_byte1 ?roll_byte1 . }
+    OPTIONAL { ?controller lisu:roll_byte2 ?roll_byte2 . }
+    OPTIONAL { ?controller lisu:roll_scale ?roll_scale . }
+    OPTIONAL { ?controller lisu:yaw_channel ?yaw_channel . }
+    OPTIONAL { ?controller lisu:yaw_byte1 ?yaw_byte1 . }
+    OPTIONAL { ?controller lisu:yaw_byte2 ?yaw_byte2 . }
+    OPTIONAL { ?controller lisu:yaw_scale ?yaw_scale . }
+    OPTIONAL { ?controller lisu:btn1_channel ?btn1_channel . }
+    OPTIONAL { ?controller lisu:btn1_byte ?btn1_byte . }
+    OPTIONAL { ?controller lisu:btn1_bit ?btn1_bit . }
+    OPTIONAL { ?controller lisu:btn2_channel ?btn2_channel . }
+    OPTIONAL { ?controller lisu:btn2_byte ?btn2_byte . }
+    OPTIONAL { ?controller lisu:btn2_bit ?btn2_bit . }
     FILTER(?VID = "{self.vid}" && ?PID="{self.pid}")
 }}
-GROUP BY ?name
+GROUP BY ?name ?type
 ?x_channel ?x_byte1 ?x_byte2 ?x_scale
 ?y_channel ?y_byte1 ?y_byte2 ?y_scale
 ?z_channel ?z_byte1 ?z_byte2 ?z_scale
@@ -125,10 +121,16 @@ GROUP BY ?name
 ?btn1_channel ?btn1_byte ?btn1_bit
 ?btn2_channel ?btn2_byte ?btn2_bit"""
         result = self._query(query_string)
-        return [{"name": str(row.name), **{k: str(v) for k, v in row.asdict().items() if k != "name"}} for row in result]
+        return [
+            {
+                "name": str(row.name),
+                "type": str(row.type) if hasattr(row, "type") else "unknown",
+                **{k: str(v) for k, v in row.asdict().items() if k not in ["name", "type"]}
+            }
+            for row in result
+        ]
 
     def get_user_modes(self) -> List[str]:
-        """Get all user mode macros for a specific controller."""
         if not self.controller_name:
             return []
         query_string = f""" {self.header}
@@ -145,13 +147,12 @@ GROUP BY ?macros"""
         return [str(row.macros) for row in result]
 
     def get_actuation_commands(self) -> Optional[List[str]]:
-        """Get actuation commands (e.g., for Drishti) from the ontology."""
         query_string = f""" {self.header}
         SELECT ?command
         WHERE
         {{
             ?actuation lisu:hasCommand ?command .
-            FILTER(regex(?command, "^addrotation|addrotationclip", "i"))  # Example filter for Drishti commands
+            FILTER(regex(?command, "^addrotation|addrotationclip", "i"))
         }}
         GROUP BY ?command"""
         result = self._query(query_string)
@@ -159,7 +160,6 @@ GROUP BY ?macros"""
         return commands if commands else None
 
 def ListAllUserModes() -> List[dict]:
-    """List all user modes across all controllers in the ontology."""
     ontology = LisuOntology()
     query_string = f""" {ontology.header}
 SELECT ?ctrname ?usrmod
@@ -175,7 +175,6 @@ ORDER BY ?usrmod"""
     return [{"ctrname": str(row.ctrname), "usrmod": str(row.usrmod)} for row in result]
 
 def ListAllDevices() -> List[dict]:
-    """List all devices with basic attributes."""
     ontology = LisuOntology()
     query_string = f""" {ontology.header}
 SELECT ?name ?VID ?PID ?level ?AXES ?BTNS ?HATS
@@ -196,7 +195,6 @@ GROUP BY ?name ?VID ?PID ?level ?AXES ?BTNS ?HATS"""
              "BTNS": str(row.BTNS), "HATS": str(row.HATS)} for row in result]
 
 def ListAllControllers() -> List[dict]:
-    """List all controllers with detailed attributes."""
     ontology = LisuOntology()
     query_string = f""" {ontology.header}
 SELECT ?name ?VID ?PID ?level ?AXES ?BTNS ?HATS
@@ -250,8 +248,7 @@ GROUP BY ?name ?VID ?PID ?level ?AXES ?BTNS ?HATS
     return [{k: str(v) for k, v in row.asdict().items()} for row in result]
 
 if __name__ == "__main__":
-    # Example usage
-    ontology = LisuOntology(vid="054c", pid="09cc")  # PS4 controller example
+    ontology = LisuOntology(vid="054c", pid="09cc")
     attrs = ontology.get_controller_attributes()
     if attrs:
         print(f"Controller: {attrs['product_name']}, Level: {attrs['level']}")
