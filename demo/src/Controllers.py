@@ -1,8 +1,15 @@
+import sys
+from pathlib import Path
+
+# Add the project directory to the Python path
+project_dir = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(project_dir))
+
+from LISU.devices import InputDevice
+from LISU.datasource import LisuOntology
+from LISU.getcontrollers import LisuControllers
+from Actuation import Actuation, xAxisChangeHandler, yAxisChangeHandler, zAxisChangeHandler, changeActuationHandler
 from typing import Callable, Optional, Dict
-from src.LISU.devices import InputDevice
-from LISU_getcontrollers import LisuControllers
-from src.LISU.datasource import LisuOntology
-from src.actuation import Actuation, xAxisChangeHandler, yAxisChangeHandler, zAxisChangeHandler, changeActuationHandler, subAngleHandler
 
 class Controllers:
     """Manages generic input devices via ontology, using dynamic configuration from JSON."""
@@ -21,7 +28,7 @@ class Controllers:
         self.device = self.devices[0]
         self.device.open()
         self.callbacks = callbacks
-        self.actuation = Actuation()  # Create Actuation instance for callbacks
+        self.actuation = Actuation.Actuation()  # Create Actuation instance for callbacks
         self.init_status(0)
         self.state = {"x": 0.0, "y": 0.0, "z": 0.0, "buttons": [0] * len(self.device.specs["buttons"])}
         self.calibration = self.actuation.config.calibration_settings
