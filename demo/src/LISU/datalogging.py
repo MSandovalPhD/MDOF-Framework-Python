@@ -4,7 +4,7 @@ from typing import Any
 
 class LisuLogger:
     """Handles logging of LISU events to a timestamped file."""
-    def __init__(self, log_dir: str = "."):
+    def __init__(self, log_dir: str = "./logs"):
         """Initialize logger with a timestamped file."""
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         log_file = f"{log_dir}/LISU_{timestamp}.txt"
