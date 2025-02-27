@@ -1,4 +1,16 @@
 {
+  "visualisation": {
+    "options": [
+      "Drishti-v2.6.4",
+      "ParaView"
+    ],
+    "selected": null,  
+    "render_options": {
+      "resolution": "1920x1080",
+      "colour_scheme": "default",
+      "transparency": 0.5
+    }
+  },
   "actuation": {
     "config": {
       "x": 0.0,
@@ -15,21 +27,20 @@
       "addrotation %.3f %.3f %.3f %s"
     ]
   },
-  "visualisation": {
-    "selected": "3d_model_view", 
-    "render_options": {
-      "resolution": "1920x1080",
-      "color_scheme": "default",
-      "transparency": 0.5
-    }
-  },
   "calibration": {
-    "deadzone": 0.25,
+    "deadzone": 0.1,
     "scale_factor": 1.0,
     "axis_mapping": {
-      "x": "left_stick_lr",
-      "y": "left_stick_ud",
-      "z": "right_trigger"
+      "x": "mouse_x",
+      "y": "none",
+      "z": "none"
+    }
+  },
+  "input_devices": {
+    "Bluetooth_mouse": {
+      "type": "mouse",
+      "axes": ["x"],
+      "buttons": ["left_click", "right_click"]
     }
   }
 }
