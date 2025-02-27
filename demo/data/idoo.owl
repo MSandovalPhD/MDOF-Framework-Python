@@ -1399,7 +1399,43 @@
         <idoo:Executes rdf:resource="&idoo;TranslationBricks"/>
         <ComputerSystem_ODP:usesOperatingSystem rdf:resource="&idoo;Win10"/>
     </owl:NamedIndividual>
+
+<!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#Bluetooth_Mouse -->
     
+    <owl:NamedIndividual rdf:about="&idoo;Bluetooth_Mouse">
+        <rdf:type rdf:resource="&idoo;Mouse"/>  <!-- Assuming Mouse is a class in your ontology -->
+        <idoo:hatIdx rdf:datatype="&xsd;int">-1</idoo:hatIdx>
+        <idoo:hatUpIdx rdf:datatype="&xsd;int">0</idoo:hatUpIdx>
+        <idoo:hatLeftIdx rdf:datatype="&xsd;int">0</idoo:hatLeftIdx>
+        <idoo:rightBtn2Idx rdf:datatype="&xsd;int">1</idoo:rightBtn2Idx>  <!-- Right click (button 2) -->
+        <idoo:HATS rdf:datatype="&xsd;int">0</idoo:HATS>
+        <idoo:rightBtn1Idx rdf:datatype="&xsd;int">0</idoo:rightBtn1Idx>  <!-- Not used for mouse -->
+        <idoo:hatRightIdx rdf:datatype="&xsd;int">0</idoo:hatRightIdx>
+        <idoo:leftStickLRIdx rdf:datatype="&xsd;int">0</idoo:leftStickLRIdx>  <!-- Not used for mouse -->
+        <idoo:leftBtn1Idx rdf:datatype="&xsd;int">0</idoo:leftBtn1Idx>  <!-- Left click (button 1) -->
+        <idoo:selectBtnIdx rdf:datatype="&xsd;int">0</idoo:selectBtnIdx>  <!-- Not used for mouse -->
+        <idoo:leftStickUDIdx rdf:datatype="&xsd;int">0</idoo:leftStickUDIdx>  <!-- Not used for mouse -->
+        <idoo:hatDownIdx rdf:datatype="&xsd;int">0</idoo:hatDownIdx>
+        <idoo:leftBtn2Idx rdf:datatype="&xsd;int">1</idoo:leftBtn2Idx>  <!-- Right click (button 2) -->
+        <idoo:triangleBtnIdx rdf:datatype="&xsd;int">0</idoo:triangleBtnIdx>  <!-- Not used for mouse -->
+        <idoo:startBtnIdx rdf:datatype="&xsd;int">0</idoo:startBtnIdx>  <!-- Not used for mouse -->
+        <idoo:VID rdf:datatype="&xsd;hexBinary">046D</idoo:VID>
+        <idoo:PID rdf:datatype="&xsd;hexBinary">B03A</idoo:PID>
+        <idoo:squareBtnIdx rdf:datatype="&xsd;int">0</idoo:squareBtnIdx>  <!-- Not used for mouse -->
+        <idoo:rightStickUDIdx rdf:datatype="&xsd;int">0</idoo:rightStickUDIdx>  <!-- Not used for mouse -->
+        <idoo:rightStickLRIdx rdf:datatype="&xsd;int">0</idoo:rightStickLRIdx>  <!-- Not used for mouse -->
+        <idoo:circleBtnIdx rdf:datatype="&xsd;int">0</idoo:circleBtnIdx>  <!-- Not used for mouse -->
+        <idoo:crossXBtnIdx rdf:datatype="&xsd;int">0</idoo:crossXBtnIdx>  <!-- Not used for mouse -->
+        <idoo:leftTriggerIdx rdf:datatype="&xsd;int">0</idoo:leftTriggerIdx>  <!-- Not used for mouse -->
+        <idoo:rightTriggerIdx rdf:datatype="&xsd;int">0</idoo:rightTriggerIdx>  <!-- Not used for mouse -->
+        <idoo:BTNS rdf:datatype="&xsd;int">2</idoo:BTNS>  <!-- Left and right clicks -->
+        <idoo:DOF rdf:datatype="&xsd;integer">1</idoo:DOF>  <!-- Only x-axis for 1-axis rotation -->
+        <idoo:productName rdf:datatype="&xsd;string">Bluetooth_Mouse</idoo:productName>
+        <idoo:hasProperties rdf:resource="&idoo;1Axis"/>  <!-- Assuming 1-axis (x) for mouse -->
+        <idoo:isAppropriate rdf:resource="&idoo;GeneralUse"/>  <!-- Broad compatibility; adjust to Gamers if preferred -->
+        <idoo:Executes rdf:resource="&idoo;addrotation"/>  <!-- Maps to "addrotation %.3f %.3f %.3f %s" -->
+        <ComputerSystem_ODP:usesOperatingSystem rdf:resource="&idoo;Win10"/>  <!-- Assuming Windows 10 compatibility -->
+    </owl:NamedIndividual>
 
 
     <!-- https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#XAxis -->
