@@ -49,21 +49,21 @@ class ActuationConfig:
                 with open(config_path, "r") as f:
                     config = json.load(f)
                     config_data = config.get("actuation", {}).get("config", default_config["actuation"]["config"])
-                    vis_data = config.get("visualization", default_config["visualization"])
+                    vis_data = config.get("visualisation", default_config["visualisation"])
                     cal_data = config.get("calibration", default_config["calibration"])
             else:
                 config_data, vis_data, cal_data = (default_config["actuation"]["config"],
-                                                 default_config["visualization"],
+                                                 default_config["visualisation"],
                                                  default_config["calibration"])
         except json.JSONDecodeError as e:
             print(f"Invalid JSON in {config_path}: {e}")
             config_data, vis_data, cal_data = (default_config["actuation"]["config"],
-                                             default_config["visualization"],
+                                             default_config["visualisation"],
                                              default_config["calibration"])
         except Exception as e:
             print(f"Failed to load configuration from {config_path}: {e}")
             config_data, vis_data, cal_data = (default_config["actuation"]["config"],
-                                             default_config["visualization"],
+                                             default_config["visualisation"],
                                              default_config["calibration"])
 
         # Set instance attributes from config or defaults
@@ -78,7 +78,7 @@ class ActuationConfig:
         self.count_state: int = int(config_data.get("count_state", 0))
 
         # Store visualization and calibration for other scripts to access
-        self.visualization = vis_data
+        self.visualisation = vis_data
         self.calibration = cal_data
 
     def _load_instructions(self) -> List[str]:
@@ -94,7 +94,7 @@ class ActuationConfig:
             print(f"Failed to load actuation commands from ontology: {e}")
 
         # Fall back to JSON configuration
-        config_path = Path("./data/visualization_config.json")
+        config_path = Path("./data/visualisation_config.json")
         try:
             if config_path.exists():
                 with open(config_path, "r") as f:
@@ -113,8 +113,8 @@ class ActuationConfig:
 
     @property
     def visualization_settings(self) -> Dict:
-        """Get visualization settings."""
-        return self.visualization
+        """Get visualisation settings."""
+        return self.visualisation
 
     @property
     def calibration_settings(self) -> Dict:
