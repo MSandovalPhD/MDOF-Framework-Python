@@ -1,9 +1,15 @@
+import sys
+from pathlib import Path
+
+# Add the project directory to the Python path
+project_dir = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(project_dir))
+
 import numpy as np
 import socket
 import json
 from typing import List, Optional, Dict
-from pathlib import Path
-from src.LISU.datasource import LisuOntology
+from LISU.datasource import LisuOntology
 
 class ActuationConfig:
     def __init__(self):
@@ -174,6 +180,18 @@ def xAxisChangeHandler(valLR: float, valUD: float, actuation: 'Actuation') -> No
     mapping = cal.get("axis_mapping", {})
     if mapping.get("x", "mouse_x") == "mouse_x":
         actuation.config.x = valLR  # Use only x for mouse movement
+
+def yAxisChangeHandler(valLR: float, valUD: float, actuation: 'Actuation') -> None:
+    cal = actuation.config.calibration_settings
+    mapping = cal.get("axis_mapping", {})
+    if mapping.get("y", "mouse_y") == "mouse_y":
+        actuation.config.y = valLR  # Use only y for mouse movement
+
+def zAxisChangeHandler(valLR: float, valUD: float, actuation: 'Actuation') -> None:
+    cal = actuation.config.calibration_settings
+    mapping = cal.get("axis_mapping", {})
+    if mapping.get("z", "mouse_z") == "mouse_z":
+        actuation.config.z = valLR  # Use only z for mouse movement
 
 def changeActuationHandler(val: int, actuation: 'Actuation') -> None:
     actuation.change_actuation(val)
