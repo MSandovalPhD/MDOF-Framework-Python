@@ -8,8 +8,8 @@ import cProfile
 import pstats
 import io
 from datetime import datetime
-from src.lisu import LisuManager
-from src.LISU.datalogging import recordLog
+from demo.src.lisu import LisuManager  # Absolute import from root
+from demo.src.LISU.datalogging import recordLog  # Subdirectory import
 from pathlib import Path
 import threading
 import signal
@@ -26,8 +26,9 @@ class TestLisuStandalone:
         self.received_packets = []
 
     def start_udp_listener(self):
+        """Start a UDP listener on 127.0.0.1:7755 to capture packets."""
         self.udp_listener = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.udp_listener.bind(("127.0.0.1", 7755))  # Default port, adjust if needed
+        self.udp_listener.bind(("127.0.0.1", 7755))  # Default port
         self.running = threading.Event()
         self.running.set()
 
@@ -47,12 +48,14 @@ class TestLisuStandalone:
         self.udp_thread.start()
 
     def stop_udp_listener(self):
+        """Stop the UDP listener."""
         if self.udp_listener:
             self.running.clear()
             self.udp_thread.join()
             self.udp_listener.close()
 
     def test_lisu_standalone(self):
+        """Run the standalone feature tests."""
         qprompt.clear()
         print("LISU API - Standalone Feature Test Suite")
         print("Testing LisuManager features...")
