@@ -3,30 +3,33 @@ LISU 2022: Activates a 3D specialized input device from detected controllers.
 """
 
 import qprompt
-from LISU import LisuManager
-from LISU_getcontrollers import LisuControllers
-from typing import Optional
+from src.lisu import LisuManager  # Adjusted import based on your structure
+from LISU.datalogging import recordLog
 
-def test_lisu() -> None:
+def test_lisu_3d_input() -> None:
     """Test and activate a 3D input device from detected controllers."""
     qprompt.clear()
-    print("LISU API")
+    print("LISU API - 3D Input Device Test")
     print("Configuring controllers...")
-    print("Press any key (system keyboard) to stop...")
+    print("Press Ctrl+C to stop...")
 
-    # Detect controllers
-    controllers_detected = LisuControllers.LisuListDevices()
-    if not controllers_detected:
-        print("No controllers detected.")
-        qprompt.ask_yesno(default="y")
+    # List detected devices using LisuManager
+    lisu = LisuManager(target_device=None)  # No specific target yet
+    device_info = lisu.detect_devices()
+    if not device_info:
+        print("No 3D input devices detected.")
+        recordLog("No 3D input devices detected.")
+        qprompt.ask_yesno("Exit? (y/n)", default="y")
         return
 
-    # Initialize LISU manager and start 3D input
-    lisu = LisuManager()
-    vid, pid = controllers_detected[0]  # Use first detected device
-    lisu.start_3d_input(vid, pid)
-    qprompt.ask_yesno(default="y")
-    qprompt.clear()
+    # Select a 3D device (assuming first detected is suitable; refine as needed)
+    vid, pid, name, dev_config = device_info
+    print(f"Selected device: {name} (VID: {vid}, PID: {pid})")
+    recordLog(f"Selected device: {name} (VID: {vid}, PID: {pid})")
+
+    # Configure and run with the detected device
+    lisu = LisuManager(target_device=name)
+    lisu.run()
 
 if __name__ == "__main__":
     qprompt.clear()
@@ -34,11 +37,11 @@ if __name__ == "__main__":
     qprompt.echo("LISU (Library for Interactive Settings and Users-modes) 2022")
     qprompt.echo("LISU automatically configures and activates a 3D specialized input device.")
     qprompt.echo("Instructions:")
-    qprompt.echo("1. Press 's' to run LISU.")
-    qprompt.echo("2. Press your input controller button to change functions.")
-    qprompt.echo("3. Press 'q' to exit.")
-    menu.add("s", "Start!", test_lisu)
-    menu.add("q", "Quit")
+    qprompt.echo("1. Press 's' to start LISU and activate a 3D input device.")
+    qprompt.echo("2. Move the device or press buttons to send actuation commands.")
+    qprompt.echo("3. Press Ctrl+C to exit.")
+    menu.add("s", "Start!", test_lisu_3d_input)
+    menu.add("q", "Quit", lambda: None)
 
     while menu.show() != "q":
         pass
