@@ -48,7 +48,7 @@ LISU (Layered Interaction System for User-Modes) is a framework developed to man
 
 3. Use the main LISU module for custom device activation:
    ```python
-   from lisu import LisuManager
+   from LisuHandler import LisuManager
    lisu = LisuManager()
    lisu.start_gamepad(0x054c, 0x09cc)  # Example for PS4 controller (VID/PID)
    ```
