@@ -56,10 +56,6 @@ LISU (Layered Interaction System for User-Modes) is a framework developed for ma
    lisu.start_gamepad(0x054c, 0x09cc)  # Example for PS4 controller (VID/PID)
    ```
 
-### VRPN Executables
-
-Ensure `vrpnLisu_device_0.exe` and `vrpnLisu_device_1.exe` are in `demo/bin/`. If not available, build them using VRPN source code or contact the project author for distribution. Run these executables directly or via the test scripts for networked device interaction.
-
 ### Profiling
 
 Each test script generates profiling stats in `demo/logs/Profiler_<ScriptName>_<Timestamp>.txt`. Review these files for performance insights.
