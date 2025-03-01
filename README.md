@@ -52,33 +52,34 @@ LISU (Layered Interaction System for User-Modes) is a framework developed to man
    lisu = LisuManager()
    lisu.start_gamepad(0x054c, 0x09cc)  # Example for PS4 controller (VID/PID)
    ```
-   Expected output:
-   ```
-   LISU (Library for Interactive Settings and Users-modes) 2022
-   Standalone test suite for LISU features.
-   Instructions:
-   1. Press 's' to run LISU feature tests.
-   2. Ensure Bluetooth_mouse is connected.
-   3. Tests will run automatically; Ctrl+C stops if needed.
-   [?] (s,q): s
-   LISU API - Standalone Feature Test Suite
-   Testing LisuManager features...
-   Press Ctrl+C to stop...
-   Found target device: Bluetooth_mouse (VID: 046d, PID: b03a)
-   Test 1 Passed: Detected Bluetooth_mouse (VID: 046d, PID: b03a)
-   Test 2 Passed: Configured device successfully
-   Test 3 Passed: Input normalized to 0.0787 (within -1 to 1)
-   Test 4 Passed: Button toggled to y-axis
-   Test 5 Passed: Y-axis input -0.0394 after toggle
-   Running LISU for UDP test (5 seconds)...
-   Calling actuation for Bluetooth_mouse with input: [0.0, -0.0394, 0.0]
-   Bluetooth_mouse : addrotation 0.0 0.039 0.0 1
-   UDP instruction sent to 127.0.0.1:7755: addrotation 0.0 0.039 0.0 1
-   Test 6 Passed: Received 1 UDP packets (e.g., addrotation 0.0 0.039 0.0 1)
-   Test 7 Passed: Device closed successfully
-   All tests passed!
-   [?] (s,q): q
- ```
+  ### Expected Output
+
+```plaintext
+LISU (Library for Interactive Settings and Users-modes) 2022
+Standalone test suite for LISU features.
+Instructions:
+1. Press 's' to run LISU feature tests.
+2. Ensure Bluetooth_mouse is connected.
+3. Tests will run automatically; Ctrl+C stops if needed.
+[?] (s,q): s
+LISU API - Standalone Feature Test Suite
+Testing LisuManager features...
+Press Ctrl+C to stop...
+Found target device: Bluetooth_mouse (VID: 046d, PID: b03a)
+Test 1 Passed: Detected Bluetooth_mouse (VID: 046d, PID: b03a)
+Test 2 Passed: Configured device successfully
+Test 3 Passed: Input normalized to 0.0787 (within -1 to 1)
+Test 4 Passed: Button toggled to y-axis
+Test 5 Passed: Y-axis input -0.0394 after toggle
+Running LISU for UDP test (5 seconds)...
+Calling actuation for Bluetooth_mouse with input: [0.0, -0.0394, 0.0]
+Bluetooth_mouse : addrotation 0.0 0.039 0.0 1
+UDP instruction sent to 127.0.0.1:7755: addrotation 0.0 0.039 0.0 1
+Test 6 Passed: Received 1 UDP packets (e.g., addrotation 0.0 0.039 0.0 1)
+Test 7 Passed: Device closed successfully
+All tests passed!
+[?] (s,q): q
+```
 
 ### Profiling
 
