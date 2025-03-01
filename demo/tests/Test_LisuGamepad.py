@@ -7,47 +7,56 @@ import cProfile
 import pstats
 import io
 from datetime import datetime
-from LISU import LisuManager
-from LISU_getcontrollers import LisuControllers
-from typing import Optional
+from src.lisu import LisuManager  # Adjusted import
+from LISU.datalogging import recordLog
+from pathlib import Path
 
-def test_lisu() -> None:
+def test_lisu_gamepad() -> None:
     """Test and activate a gamepad from detected controllers."""
     qprompt.clear()
-    print("LISU API")
+    print("LISU API - Gamepad Test")
     print("Configuring controllers...")
-    print("Press 'Ctrl + C' to stop...")
+    print("Press Ctrl+C to stop...")
 
-    # Detect controllers
-    controllers_detected = LisuControllers.LisuListDevices()
-    if not controllers_detected:
-        print("No controllers detected.")
-        qprompt.ask_yesno(default="y")
+    # List detected devices using LisuManager
+    lisu = LisuManager(target_device=None)  # No specific target yet
+    device_info = lisu.detect_devices()
+    if not device_info:
+        print("No gamepads detected.")
+        recordLog("No gamepads detected.")
+        qprompt.ask_yesno("Exit? (y/n)", default="y")
         return
 
-    # Initialize LISU manager and start gamepad
-    lisu = LisuManager()
-    vid, pid = controllers_detected[0]  # Use first detected device
-    lisu.start_gamepad(vid, pid)
-    qprompt.ask_yesno(default="y")
-    qprompt.clear()
+    # Select a gamepad (assuming first detected; refine if needed)
+    vid, pid, name, dev_config = device_info
+    if dev_config.get("type") != "gamepad":
+        print(f"Detected device {name} is not a gamepad.")
+        recordLog(f"Detected device {name} is not a gamepad.")
+        qprompt.ask_yesno("Exit? (y/n)", default="y")
+        return
+
+    print(f"Selected gamepad: {name} (VID: {vid}, PID: {pid})")
+    recordLog(f"Selected gamepad: {name} (VID: {vid}, PID: {pid})")
+
+    # Configure and run with the detected gamepad
+    lisu = LisuManager(target_device=name)
+    lisu.run()
 
 if __name__ == "__main__":
     # Setup profiler
     profiler = cProfile.Profile()
     profiler.enable()
 
-    # Display menu
     qprompt.clear()
     menu = qprompt.Menu()
     qprompt.echo("LISU (Library for Interactive Settings and Users-modes) 2022")
     qprompt.echo("LISU automatically configures and activates a gamepad from detected controllers.")
     qprompt.echo("Instructions:")
-    qprompt.echo("1. Press 's' to run LISU.")
-    qprompt.echo("2. Press your gamepad button to change functions.")
-    qprompt.echo("3. Press 'q' to exit.")
-    menu.add("s", "Start!", test_lisu)
-    menu.add("q", "Quit")
+    qprompt.echo("1. Press 's' to start LISU and activate a gamepad.")
+    qprompt.echo("2. Move the gamepad or press buttons to send actuation commands.")
+    qprompt.echo("3. Press Ctrl+C to exit.")
+    menu.add("s", "Start!", test_lisu_gamepad)
+    menu.add("q", "Quit", lambda: None)
 
     while menu.show() != "q":
         pass
@@ -61,7 +70,7 @@ if __name__ == "__main__":
     stats.print_stats()
 
     timestr = datetime.now().strftime("%Y%m%d-%H%M%S")
-    log_dir = "Logs"
-    os.makedirs(log_dir, exist_ok=True)  # Ensure Logs directory exists
-    with open(f"{log_dir}/Profiler_LisuGamepad_{timestr}.txt", "w") as f:
+    log_dir = Path("logs")  # Match your framework’s log directory
+    log_dir.mkdir(exist_ok=True)  # Ensure directory exists
+    with open(log_dir / f"Profiler_LisuGamepad_{timestr}.txt", "w") as f:
         f.write(stats_stream.getvalue())
