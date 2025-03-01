@@ -15,7 +15,7 @@ LISU (Layered Interaction System for User-Modes) is a framework developed to man
 ### Prerequisites
 
 - Python 3.7 or higher
-- Windows (for `pywinusb` and VRPN executables)
+- Windows (for `pywinusb`)
 
 ### Steps
 
