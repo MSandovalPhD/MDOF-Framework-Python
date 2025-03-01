@@ -46,11 +46,7 @@ LISU (Layered Interaction System for User-Modes) is a framework developed for ma
 
 2. Run test scripts from the `tests/` directory to activate controllers or test functionality:
    ```bash
-   python tests/test_lisugamepad.py    # Test a single gamepad
-   python tests/test_lisuparallel.py   # Test multiple controllers in parallel
-   python tests/test_3dinputdevice.py  # Test a 3D input device
-   python tests/test_vrpngamepad.py    # Test VRPN gamepad
-   python tests/test_vrpnparallel.py   # Test VRPN parallel devices
+   python tests/test_lisufeatures.py    # Test this framewrok features   
    ```
 
 3. Use the main LISU module for custom device activation:
@@ -93,11 +89,7 @@ MDOF-Framework-Python/
 │   │   └── lisu.py
 │   ├── tests/                  # Test scripts
 │   │   ├── __init__.py
-│   │   ├── test_3dinputdevice.py
-│   │   ├── test_lisugamepad.py
-│   │   ├── test_lisuparallel.py
-│   │   ├── test_vrpngamepad.py
-│   │   └── test_vrpnparallel.py
+│   │   ├── test_lisufeatures.py
 ├── requirements.txt            # Project dependencies
 └── setup.py                    # Setup script for packaging/distribution
 └── README.md                   # Project overview
