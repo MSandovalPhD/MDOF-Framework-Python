@@ -1,5 +1,6 @@
 # Multiple Degrees-Of-Freedom Input Devices for Interactive Command and Control within Virtual Reality in Industrial Visualisations
-LISU (which stands for Layered Interaction System for User-Modes) is a framework developed for managing the raw input data from heterogeneous input devices. LISU offers a solution for VR (Virtual Reality) developers, creators, and designers to resolve interoperability and compatibility issues in VR applications caused by the heterogeneity of input controllers by unifying the roles of multiple code segments and APIs for input management.
+
+LISU (Layered Interaction System for User-Modes) is a framework developed for managing the raw input data from heterogeneous input devices. LISU offers a solution for VR (Virtual Reality) developers, creators, and designers to resolve interoperability and compatibility issues in VR applications caused by the heterogeneity of input controllers by unifying the roles of multiple code segments and APIs for input management.
 
 ## Features
 
@@ -45,16 +46,16 @@ LISU (which stands for Layered Interaction System for User-Modes) is a framework
 
 2. Run test scripts from the `tests/` directory to activate controllers or test functionality:
    ```bash
-   python tests/Test_LisuGamepad.py    # Test a single gamepad
-   python tests/Test_LisuParallel.py   # Test multiple controllers in parallel
-   python tests/Test_3DInputDevice.py  # Test a 3D input device
-   python tests/Test_VrpnGamepad.py    # Test VRPN gamepad
-   python tests/Test_VrpnParallel.py   # Test VRPN parallel devices
+   python tests/test_lisugamepad.py    # Test a single gamepad
+   python tests/test_lisuparallel.py   # Test multiple controllers in parallel
+   python tests/test_3dinputdevice.py  # Test a 3D input device
+   python tests/test_vrpngamepad.py    # Test VRPN gamepad
+   python tests/test_vrpnparallel.py   # Test VRPN parallel devices
    ```
 
 3. Use the main LISU module for custom device activation:
    ```python
-   from LISU import LisuManager
+   from lisu import LisuManager
    lisu = LisuManager()
    lisu.start_gamepad(0x054c, 0x09cc)  # Example for PS4 controller (VID/PID)
    ```
