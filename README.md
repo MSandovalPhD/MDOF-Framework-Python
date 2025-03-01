@@ -63,9 +63,6 @@ Each test script generates profiling stats in `demo/logs/Profiler_<ScriptName>_<
 ```
 MDOF-Framework-Python/
 ├── demo/                       # Main project directory
-│   ├── bin/                    # VRPN executables
-│   │   ├── vrpnLisu_device_0.exe
-│   │   └── vrpnLisu_device_1.exe
 │   ├── data/                   # Data files (e.g., ontology)
 │   │   └── idoo.owl
 │   ├── logs/                   # Log and profiler output (generated at runtime)
