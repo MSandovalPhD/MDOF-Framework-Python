@@ -3,20 +3,38 @@ LISU 2022: Standalone test suite for LisuManager features.
 Tests device detection, input normalization, button toggling, UDP transmission, and shutdown.
 """
 
-import qprompt
-import cProfile
-import pstats
-import io
-from datetime import datetime
-from demo.src.lisu import LisuManager  # Absolute import from root
-from demo.src.LISU.datalogging import recordLog  # Subdirectory import
-from pathlib import Path
-import threading
-import signal
 import sys
+from pathlib import Path
+
+# Add demo/src/ to sys.path to find modules directly
+project_dir = Path(__file__).resolve().parent.parent / "src"  # Points to demo/src/
+sys.path.insert(0, str(project_dir))
+print(f"Adjusted sys.path to: {project_dir}")  # Debug print
+
+import qprompt
+print("Imported qprompt")  # Debug print
+import cProfile
+print("Imported cProfile")  # Debug print
+import pstats
+print("Imported pstats")  # Debug print
+import io
+print("Imported io")  # Debug print
+from datetime import datetime
+print("Imported datetime")  # Debug print
+from LisuHandler import LisuManager # Direct import from src/lisu.py
+print("Imported LisuManager from lisu")  # Debug print
+from LISU.datalogging import recordLog  # Import from src/LISU/datalogging.py
+print("Imported recordLog from LISU.datalogging")  # Debug print
+import threading
+print("Imported threading")  # Debug print
+import signal
+print("Imported signal")  # Debug print
 import time
+print("Imported time")  # Debug print
 import socket
+print("Imported socket")  # Debug print
 import unittest.mock as mock
+print("Imported unittest.mock")  # Debug print
 
 class TestLisuStandalone:
     def __init__(self):
@@ -24,6 +42,7 @@ class TestLisuStandalone:
         self.udp_listener = None
         self.udp_thread = None
         self.received_packets = []
+        print("Initialized TestLisuStandalone instance")  # Debug print
 
     def start_udp_listener(self):
         """Start a UDP listener on 127.0.0.1:7755 to capture packets."""
@@ -31,6 +50,7 @@ class TestLisuStandalone:
         self.udp_listener.bind(("127.0.0.1", 7755))  # Default port
         self.running = threading.Event()
         self.running.set()
+        print("Set up UDP listener socket")  # Debug print
 
         def listen():
             while self.running.is_set():
@@ -46,6 +66,7 @@ class TestLisuStandalone:
         self.udp_listener.settimeout(1.0)
         self.udp_thread = threading.Thread(target=listen, daemon=True)
         self.udp_thread.start()
+        print("Started UDP listener thread")  # Debug print
 
     def stop_udp_listener(self):
         """Stop the UDP listener."""
@@ -53,6 +74,7 @@ class TestLisuStandalone:
             self.running.clear()
             self.udp_thread.join()
             self.udp_listener.close()
+        print("Stopped UDP listener")  # Debug print
 
     def test_lisu_standalone(self):
         """Run the standalone feature tests."""
@@ -112,11 +134,14 @@ class TestLisuStandalone:
         print("All tests passed!")
 
 if __name__ == "__main__":
+    print("Starting main execution block")  # Debug print
     profiler = cProfile.Profile()
     profiler.enable()
 
     qprompt.clear()
+    print("Cleared console with qprompt")  # Debug print
     menu = qprompt.Menu()
+    print("Created qprompt Menu")  # Debug print
     qprompt.echo("LISU (Library for Interactive Settings and Users-modes) 2022")
     qprompt.echo("Standalone test suite for LISU features.")
     qprompt.echo("Instructions:")
@@ -124,13 +149,17 @@ if __name__ == "__main__":
     qprompt.echo("2. Ensure Bluetooth_mouse is connected.")
     qprompt.echo("3. Tests will run automatically; Ctrl+C stops if needed.")
     tester = TestLisuStandalone()
+    print("Created TestLisuStandalone instance")  # Debug print
     menu.add("s", "Start Tests!", tester.test_lisu_standalone)
     menu.add("q", "Quit", lambda: None)
+    print("Added menu options")  # Debug print
 
     while menu.show() != "q":
+        print("Menu loop running")  # Debug print
         pass
 
     qprompt.clear()
+    print("Cleared console at end")  # Debug print
 
     profiler.disable()
     stats_stream = io.StringIO()
@@ -142,3 +171,4 @@ if __name__ == "__main__":
     log_dir.mkdir(exist_ok=True)
     with open(log_dir / f"Profiler_LisuStandalone_{timestr}.txt", "w") as f:
         f.write(stats_stream.getvalue())
+    print("Wrote profiler stats")  # Debug print
