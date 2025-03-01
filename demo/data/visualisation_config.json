@@ -1,46 +1,25 @@
 {
   "visualisation": {
-    "options": [
-      "Drishti-v2.6.4",
-      "ParaView"
-    ],
-    "selected": null,  
+    "options": ["Drishti-v2.6.4", "ParaView"],
+    "selected": null,
     "render_options": {
       "resolution": "1920x1080",
-      "colour_scheme": "default",
-      "transparency": 0.5
+      "visualisations": {
+        "Drishti-v2.6.4": {"udp_ip": "127.0.0.1", "udp_port": 7755}
+      }
     }
   },
   "actuation": {
-    "config": {
-      "x": 0.0,
-      "y": 0.0,
-      "z": 0.0,
-      "angle": 20.0,
-      "speed": 120.0,
-      "fps": 20,
-      "idx": 0,
-      "idx2": 1,
-      "count_state": 0
-    },
-    "commands": [
-      "addrotation %.3f %.3f %.3f %s"
-    ]
+    "config": {"x": 0.0, "y": 0.0, "z": 0.0},
+    "commands": {"default": "addrotation %.3f %.3f %.3f %s", "mouse": "addrotation %.3f 0.0 0.0 %s"}
   },
   "calibration": {
-    "deadzone": 0.1,
-    "scale_factor": 1.0,
-    "axis_mapping": {
-      "x": "mouse_x",
-      "y": "none",
-      "z": "none"
+    "default": {"deadzone": 0.1, "scale_factor": 1.0},
+    "devices": {
+      "Bluetooth_mouse": {"deadzone": 0.1, "scale_factor": 1.0, "axis_mapping": {"x": "mouse_x", "y": "none", "z": "none"}}
     }
   },
   "input_devices": {
-    "Bluetooth_mouse": {
-      "type": "mouse",
-      "axes": ["x"],
-      "buttons": ["left_click", "right_click"]
-    }
+    "Bluetooth_mouse": {"vid": "046d", "pid": "b03a", "type": "mouse", "library": "pywinusb", "axes": ["x"], "buttons": ["left_click"], "command": "mouse"}
   }
 }

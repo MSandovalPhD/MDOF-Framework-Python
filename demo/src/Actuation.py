@@ -6,13 +6,20 @@ from pathlib import Path
 from LISU.datalogging import recordLog
 
 class ActuationConfig:
-    def __init__(self):
+    def __init__(self, selected_visualisation: str = None):
         config_path = Path("./data/visualisation_config.json")
         default_config = {
-            "visualisation": {"options": ["Drishti-v2.6.4", "ParaView"], "selected": None, "render_options": {"resolution": "1920x1080", "colour_scheme": "default", "transparency": 0.5}},
-            "actuation": {"config": {"x": 0.0, "y": 0.0, "z": 0.0, "angle": 20.0, "speed": 120.0, "fps": 20, "idx": 0, "idx2": 1, "count_state": 0}, "commands": {"default": "addrotation %.3f %.3f %.3f %s"}},
+            "visualisation": {
+                "options": [],  # Empty, expects JSON to specify
+                "selected": selected_visualisation,
+                "render_options": {"resolution": "1920x1080"}  # Minimal, no UDP defaults
+            },
+            "actuation": {
+                "config": {"x": 0.0, "y": 0.0, "z": 0.0, "angle": 20.0, "speed": 120.0, "fps": 20, "idx": 0, "idx2": 1, "count_state": 0},
+                "commands": {"default": "addrotation %.3f %.3f %.3f %s"}
+            },
             "calibration": {"deadzone": 0.1, "scale_factor": 1.0, "axis_mapping": {"x": "mouse_x", "y": "none", "z": "none"}},
-            "input_devices": {"Bluetooth_mouse": {"type": "mouse", "axes": ["x"], "buttons": ["left_click", "right_click"]}}
+            "input_devices": {}
         }
         self.fun_array = self._load_instructions()
 
@@ -25,36 +32,49 @@ class ActuationConfig:
                     cal_data = config.get("calibration", default_config["calibration"])
                     input_devs = config.get("input_devices", default_config["input_devices"])
             else:
-                config_data, vis_data, cal_data, input_devs = (default_config["actuation"]["config"],
-                                                             default_config["visualisation"],
-                                                             default_config["calibration"],
-                                                             default_config["input_devices"])
+                config_data, vis_data, cal_data, input_devs = (
+                    default_config["actuation"]["config"],
+                    default_config["visualisation"],
+                    default_config["calibration"],
+                    default_config["input_devices"]
+                )
+                recordLog("No JSON config found, using minimal default configuration")
         except json.JSONDecodeError as e:
             print(f"Invalid JSON in {config_path}: {e}")
-            config_data, vis_data, cal_data, input_devs = (default_config["actuation"]["config"],
-                                                         default_config["visualisation"],
-                                                         default_config["calibration"],
-                                                         default_config["input_devices"])
+            recordLog(f"Invalid JSON in {config_path}: {e}")
+            config_data, vis_data, cal_data, input_devs = (
+                default_config["actuation"]["config"],
+                default_config["visualisation"],
+                default_config["calibration"],
+                default_config["input_devices"]
+            )
         except Exception as e:
             print(f"Failed to load configuration from {config_path}: {e}")
-            config_data, vis_data, cal_data, input_devs = (default_config["actuation"]["config"],
-                                                         default_config["visualisation"],
-                                                         default_config["calibration"],
-                                                         default_config["input_devices"])
+            recordLog(f"Failed to load configuration from {config_path}: {e}")
+            config_data, vis_data, cal_data, input_devs = (
+                default_config["actuation"]["config"],
+                default_config["visualisation"],
+                default_config["calibration"],
+                default_config["input_devices"]
+            )
 
-        self.x: float = float(config_data.get("x", 0.0))
-        self.y: float = float(config_data.get("y", 0.0))
-        self.z: float = float(config_data.get("z", 0.0))
-        self.angle: float = float(config_data.get("angle", 20.0))
-        self.speed: float = float(config_data.get("speed", 120.0))
-        self.fps: int = int(config_data.get("fps", 20))
-        self.idx: int = int(config_data.get("idx", 0))
-        self.idx2: int = int(config_data.get("idx2", 1))
-        self.count_state: int = int(config_data.get("count_state", 0))
+        self.x = float(config_data.get("x", 0.0))
+        self.y = float(config_data.get("y", 0.0))
+        self.z = float(config_data.get("z", 0.0))
+        self.angle = float(config_data.get("angle", 20.0))
+        self.speed = float(config_data.get("speed", 120.0))
+        self.fps = int(config_data.get("fps", 20))
+        self.idx = int(config_data.get("idx", 0))
+        self.idx2 = int(config_data.get("idx2", 1))
+        self.count_state = int(config_data.get("count_state", 0))
 
         self.visualisation = vis_data
         self.calibration = cal_data
         self.input_devices = input_devs
+        # Load UDP settings from JSON, default to localhost:7755
+        vis_settings = self.visualisation["render_options"].get("visualisations", {}).get(selected_visualisation or "default", {})
+        self.udp_ip = vis_settings.get("udp_ip", "127.0.0.1")
+        self.udp_port = vis_settings.get("udp_port", 7755)
 
     def _load_instructions(self) -> List[str]:
         config_path = Path("./data/visualisation_config.json")
@@ -85,13 +105,14 @@ class ActuationConfig:
         return self.input_devices
 
 class Actuation:
-    def __init__(self, vec_input_controller=None):
-        self.config = ActuationConfig()
+    def __init__(self, vec_input_controller=None, selected_visualisation: str = None):
+        self.config = ActuationConfig(selected_visualisation)
         self.vec_input_controller = vec_input_controller
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.udp_ip = "127.0.0.1"
-        self.udp_port = 7755
+        self.udp_ip = self.config.udp_ip
+        self.udp_port = self.config.udp_port
         self.sock.settimeout(1.0)
+        recordLog(f"Actuation initialized with UDP: {self.udp_ip}:{self.udp_port}")
 
     def __del__(self):
         self.sock.close()
@@ -121,24 +142,24 @@ class Actuation:
         self.config.count_state += 1
         recordLog(f"Count state for {dev_name}: {self.config.count_state}")
         if self.config.count_state >= 2:
-            # Check number of axes to adjust arguments
             dev_config = self.config.input_device_settings.get(dev_name, {})
             num_axes = len(dev_config.get("axes", ["x"]))
-            if num_axes == 1:
-                # Mouse: only x-axis and idx2
-                message = command % (-vec_input[0], str(self.config.idx2))
-            else:
-                # 3+ axes: full vector and idx2
-                message = command % (-vec_input[0], -vec_input[1], vec_input[2], str(self.config.idx2))
-            print(f"{dev_name} : {message}")
-            recordLog(f"Preparing to send for {dev_name}: {message}")
             try:
+                if num_axes == 1:
+                    message = command % (-vec_input[0], str(self.config.idx2))
+                else:
+                    message = command % (-vec_input[0], -vec_input[1], vec_input[2], str(self.config.idx2))
+                print(f"{dev_name} : {message}")
+                recordLog(f"Preparing to send for {dev_name}: {message}")
                 self.sock.sendto(message.encode(), (self.udp_ip, self.udp_port))
                 print(f"UDP instruction sent to {self.udp_ip}:{self.udp_port}: {message}")
                 recordLog(f"UDP instruction sent to {self.udp_ip}:{self.udp_port}: {message}")
             except socket.error as e:
                 print(f"Failed to send packet: {e}")
                 recordLog(f"Failed to send packet for {dev_name}: {e}")
+            except Exception as e:
+                print(f"Unexpected error in send: {e}")
+                recordLog(f"Unexpected error in send for {dev_name}: {e}")
             self.config.count_state = 0
 
     def change_actuation(self, val: int) -> None:

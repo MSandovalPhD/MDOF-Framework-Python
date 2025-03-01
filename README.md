@@ -7,7 +7,7 @@ LISU (Layered Interaction System for User-Modes) is a framework developed to man
 - Controller management for gamepads and 3D input devices (e.g., PS4, SpaceMouse).
 - Actuation logic for MDOF system interaction via UDP.
 - Parallel processing of multiple input devices.
-- Ontology-based device configuration using RDF.
+- Ontology-based device configuration.
 - Comprehensive testing and profiling tools.
 
 ## Installation
@@ -43,7 +43,7 @@ LISU (Layered Interaction System for User-Modes) is a framework developed to man
 
 2. Run test scripts from the `tests/` directory to activate controllers or test functionality:
    ```bash
-   python tests/test_lisufeatures.py    # Test this framewrok features   
+   python tests/test_lisufeatures.py    # Test this framework's features
    ```
 
 3. Use the main LISU module for custom device activation:
@@ -52,7 +52,8 @@ LISU (Layered Interaction System for User-Modes) is a framework developed to man
    lisu = LisuManager()
    lisu.start_gamepad(0x054c, 0x09cc)  # Example for PS4 controller (VID/PID)
    ```
-  ### Expected Output
+
+### Expected Output
 
 ```plaintext
 LISU (Library for Interactive Settings and Users-modes) 2022
@@ -80,6 +81,20 @@ Test 7 Passed: Device closed successfully
 All tests passed!
 [?] (s,q): q
 ```
+
+### Configuration
+
+Edit `demo/data/visualisation_config.json` (required):
+
+- **Devices**: Define under `input_devices` (e.g., `"Bluetooth_mouse": {"vid": "046d", "pid": "b03a", ...}`).
+- **Commands**: Set `actuation.commands` (e.g., `"mouse": "addrotation %.3f 0.0 0.0 %s"`).
+- **UDP Settings**: Configure `visualisation.render_options.visualisations` with `"udp_ip"` and `"udp_port"` per tool (e.g., `"Drishti-v2.6.4": {"udp_ip": "127.0.0.1", "udp_port": 7755}`).
+
+**Note**: A minimal default configuration (`127.0.0.1:7755`) is used if JSON is absent, but full functionality requires a valid JSON file.
+
+### Limitation
+
+LISU requires a UDP listener at the configured IP and port (e.g., `127.0.0.1:7755` for Drishti) to receive actuation commands. Ensure your visualization tool supports this or set up a custom listener.
 
 ### Profiling
 
