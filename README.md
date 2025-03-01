@@ -1,14 +1,13 @@
 # Multiple Degrees-Of-Freedom Input Devices for Interactive Command and Control within Virtual Reality in Industrial Visualisations
 
-LISU (Layered Interaction System for User-Modes) is a framework developed for managing the raw input data from heterogeneous input devices. LISU offers a solution for VR (Virtual Reality) developers, creators, and designers to resolve interoperability and compatibility issues in VR applications caused by the heterogeneity of input controllers by unifying the roles of multiple code segments and APIs for input management.
+LISU (Layered Interaction System for User-Modes) is a framework developed to manage raw input data from heterogeneous input devices. LISU offers a solution for VR (Virtual Reality) developers, creators, and designers to resolve interoperability and compatibility issues in VR applications caused by the heterogeneity of input controllers by unifying the roles of multiple code segments and APIs for input management.
 
 ## Features
 
 - Controller management for gamepads and 3D input devices (e.g., PS4, SpaceMouse).
 - Actuation logic for MDOF system interaction via UDP.
 - Parallel processing of multiple input devices.
-- Integration with VRPN for networked device communication.
-- Ontology-based device configuration using RDF (`idoo.owl`).
+- Ontology-based device configuration using RDF.
 - Comprehensive testing and profiling tools.
 
 ## Installation
