@@ -31,9 +31,7 @@ LISU (Layered Interaction System for User-Modes) is a framework developed for ma
    pip install -r requirements.txt
    ```
 
-3. Ensure the VRPN executables (`vrpnLisu_device_0.exe`, `vrpnLisu_device_1.exe`) are in the `demo/bin/` directory.
-
-4. Verify the ontology file (`idoo.owl`) is in the `demo/data/` directory.
+3. Verify the ontology file (`idoo.owl`) is in the `demo/data/` directory.
 
 ## Usage
 
