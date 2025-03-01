@@ -1,13 +1,13 @@
 # Multiple Degrees-Of-Freedom Input Devices for Interactive Command and Control within Virtual Reality in Industrial Visualisations
-LISU (which stands for Layered Interaction System for User-Modes) is a framework developed for managing the raw input data from heterogeneous input devices. LISU offers a solution for VR (Virtual Reality) developers, creators, and designers to resolve interoperability and compatibility issues in VR applications caused by the heterogeneity of input controllers by unifying the roles of multiple code segments and APIs for input management.
+
+LISU (Layered Interaction System for User-Modes) is a framework developed to manage raw input data from heterogeneous input devices. LISU offers a solution for VR (Virtual Reality) developers, creators, and designers to resolve interoperability and compatibility issues in VR applications caused by the heterogeneity of input controllers by unifying the roles of multiple code segments and APIs for input management.
 
 ## Features
 
 - Controller management for gamepads and 3D input devices (e.g., PS4, SpaceMouse).
 - Actuation logic for MDOF system interaction via UDP.
 - Parallel processing of multiple input devices.
-- Integration with VRPN for networked device communication.
-- Ontology-based device configuration using RDF (`idoo.owl`).
+- Ontology-based device configuration using RDF.
 - Comprehensive testing and profiling tools.
 
 ## Installation
@@ -15,7 +15,7 @@ LISU (which stands for Layered Interaction System for User-Modes) is a framework
 ### Prerequisites
 
 - Python 3.7 or higher
-- Windows (for `pywinusb` and VRPN executables)
+- Windows (for `pywinusb`; adaptable to other OS with minor changes)
 
 ### Steps
 
@@ -30,9 +30,7 @@ LISU (which stands for Layered Interaction System for User-Modes) is a framework
    pip install -r requirements.txt
    ```
 
-3. Ensure the VRPN executables (`vrpnLisu_device_0.exe`, `vrpnLisu_device_1.exe`) are in the `demo/bin/` directory.
-
-4. Verify the ontology file (`idoo.owl`) is in the `demo/data/` directory.
+3. Verify the ontology file (`idoo.owl`) is in the `demo/data/` directory.
 
 ## Usage
 
@@ -45,23 +43,43 @@ LISU (which stands for Layered Interaction System for User-Modes) is a framework
 
 2. Run test scripts from the `tests/` directory to activate controllers or test functionality:
    ```bash
-   python tests/Test_LisuGamepad.py    # Test a single gamepad
-   python tests/Test_LisuParallel.py   # Test multiple controllers in parallel
-   python tests/Test_3DInputDevice.py  # Test a 3D input device
-   python tests/Test_VrpnGamepad.py    # Test VRPN gamepad
-   python tests/Test_VrpnParallel.py   # Test VRPN parallel devices
+   python tests/test_lisufeatures.py    # Test this framewrok features   
    ```
 
 3. Use the main LISU module for custom device activation:
    ```python
-   from src.LISU import LisuManager
+   from lisu import LisuManager
    lisu = LisuManager()
    lisu.start_gamepad(0x054c, 0x09cc)  # Example for PS4 controller (VID/PID)
    ```
+  ### Expected Output
 
-### VRPN Executables
-
-Ensure `vrpnLisu_device_0.exe` and `vrpnLisu_device_1.exe` are in `demo/bin/`. If not available, build them using VRPN source code or contact the project author for distribution. Run these executables directly or via the test scripts for networked device interaction.
+```plaintext
+LISU (Library for Interactive Settings and Users-modes) 2022
+Standalone test suite for LISU features.
+Instructions:
+1. Press 's' to run LISU feature tests.
+2. Ensure Bluetooth_mouse is connected.
+3. Tests will run automatically; Ctrl+C stops if needed.
+[?] (s,q): s
+LISU API - Standalone Feature Test Suite
+Testing LisuManager features...
+Press Ctrl+C to stop...
+Found target device: Bluetooth_mouse (VID: 046d, PID: b03a)
+Test 1 Passed: Detected Bluetooth_mouse (VID: 046d, PID: b03a)
+Test 2 Passed: Configured device successfully
+Test 3 Passed: Input normalized to 0.0787 (within -1 to 1)
+Test 4 Passed: Button toggled to y-axis
+Test 5 Passed: Y-axis input -0.0394 after toggle
+Running LISU for UDP test (5 seconds)...
+Calling actuation for Bluetooth_mouse with input: [0.0, -0.0394, 0.0]
+Bluetooth_mouse : addrotation 0.0 0.039 0.0 1
+UDP instruction sent to 127.0.0.1:7755: addrotation 0.0 0.039 0.0 1
+Test 6 Passed: Received 1 UDP packets (e.g., addrotation 0.0 0.039 0.0 1)
+Test 7 Passed: Device closed successfully
+All tests passed!
+[?] (s,q): q
+```
 
 ### Profiling
 
@@ -72,9 +90,6 @@ Each test script generates profiling stats in `demo/logs/Profiler_<ScriptName>_<
 ```
 MDOF-Framework-Python/
 ├── demo/                       # Main project directory
-│   ├── bin/                    # VRPN executables
-│   │   ├── vrpnLisu_device_0.exe
-│   │   └── vrpnLisu_device_1.exe
 │   ├── data/                   # Data files (e.g., ontology)
 │   │   └── idoo.owl
 │   ├── logs/                   # Log and profiler output (generated at runtime)
@@ -92,11 +107,7 @@ MDOF-Framework-Python/
 │   │   └── lisu.py
 │   ├── tests/                  # Test scripts
 │   │   ├── __init__.py
-│   │   ├── test_3dinputdevice.py
-│   │   ├── test_lisugamepad.py
-│   │   ├── test_lisuparallel.py
-│   │   ├── test_vrpngamepad.py
-│   │   └── test_vrpnparallel.py
+│   │   ├── test_lisufeatures.py
 ├── requirements.txt            # Project dependencies
 └── setup.py                    # Setup script for packaging/distribution
 └── README.md                   # Project overview
