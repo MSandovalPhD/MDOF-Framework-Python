@@ -5,13 +5,17 @@
     "render_options": {
       "resolution": "1920x1080",
       "visualisations": {
-        "Drishti-v2.6.4": {"udp_ip": "127.0.0.1", "udp_port": 7755}
+        "Drishti-v2.6.4": {"udp_ip": "127.0.0.1", "udp_port": 7755, "command": "addrotation %.3f %.3f %.3f %.3f"},
+        "ParaView": {"udp_ip": "192.168.1.100", "udp_port": 7766, "command": "rotate %.3f %.3f %.3f"}
       }
     }
   },
   "actuation": {
-    "config": {"x": 0.0, "y": 0.0, "z": 0.0},
-    "commands": {"default": "addrotation %.3f %.3f %.3f %s", "mouse": "addrotation %.3f 0.0 0.0 %s"}
+    "config": {"x": 0.0, "y": 0.0, "z": 0.0, "angle": 20.0},
+    "commands": {
+      "default": "addrotation %.3f %.3f %.3f %.3f",
+      "mouse": "addrotation %.3f %.3f %.3f %.3f"
+    }
   },
   "calibration": {
     "default": {"deadzone": 0.1, "scale_factor": 1.0},
@@ -20,6 +24,7 @@
     }
   },
   "input_devices": {
-    "Bluetooth_mouse": {"vid": "046d", "pid": "b03a", "type": "mouse", "library": "pywinusb", "axes": ["x"], "buttons": ["left_click"], "command": "mouse"}
+    "Bluetooth_mouse": {"vid": "046d", "pid": "b03a", "type": "mouse", "library": "pywinusb", "axes": ["x"], "buttons": ["left_click", "right_click"], "command": "mouse"},
+    "PS4_Controller": {"vid": "054c", "pid": "09cc", "type": "gamepad", "library": "pywinusb", "axes": ["x", "y", "z"], "buttons": ["btn1", "btn2"], "command": "default"}
   }
 }

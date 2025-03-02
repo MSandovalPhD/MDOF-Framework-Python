@@ -7,16 +7,15 @@ from LISU.datalogging import recordLog
 
 class ActuationConfig:
     def __init__(self, selected_visualisation: str = None):
-        config_path = Path("./data/visualisation_config.json")
+        config_path = Path(__file__).parent / "data" / "visualisation_config.json"
         default_config = {
             "visualisation": {
-                "options": [],  # Empty, expects JSON to specify
-                "selected": selected_visualisation,
-                "render_options": {"resolution": "1920x1080"}  # Minimal, no UDP defaults
+                "options": [], "selected": None,
+                "render_options": {"resolution": "1920x1080"}
             },
             "actuation": {
                 "config": {"x": 0.0, "y": 0.0, "z": 0.0, "angle": 20.0, "speed": 120.0, "fps": 20, "idx": 0, "idx2": 1, "count_state": 0},
-                "commands": {"default": "addrotation %.3f %.3f %.3f %s"}
+                "commands": {"default": "addrotation %.3f %.3f %.3f %.3f"}
             },
             "calibration": {"deadzone": 0.1, "scale_factor": 1.0, "axis_mapping": {"x": "mouse_x", "y": "none", "z": "none"}},
             "input_devices": {}
@@ -71,13 +70,12 @@ class ActuationConfig:
         self.visualisation = vis_data
         self.calibration = cal_data
         self.input_devices = input_devs
-        # Load UDP settings from JSON, default to localhost:7755
         vis_settings = self.visualisation["render_options"].get("visualisations", {}).get(selected_visualisation or "default", {})
         self.udp_ip = vis_settings.get("udp_ip", "127.0.0.1")
         self.udp_port = vis_settings.get("udp_port", 7755)
 
     def _load_instructions(self) -> List[str]:
-        config_path = Path("./data/visualisation_config.json")
+        config_path = Path(__file__).parent / "data" / "visualisation_config.json"
         try:
             if config_path.exists():
                 with open(config_path, "r") as f:
@@ -90,7 +88,7 @@ class ActuationConfig:
         except Exception as e:
             print(f"Failed to load actuation commands from JSON: {e}")
             recordLog(f"Failed to load actuation commands from JSON: {e}")
-        return ["addrotation %.3f %.3f %.3f %s"]
+        return ["addrotation %.3f %.3f %.3f %.3f"]
 
     @property
     def visualisation_settings(self) -> Dict:
@@ -117,7 +115,7 @@ class Actuation:
     def __del__(self):
         self.sock.close()
 
-    def process_input(self, vec_input: List[float], dev_name: str, command: str = "addrotation %.3f %.3f %.3f %s") -> None:
+    def process_input(self, vec_input: List[float], dev_name: str, command: str = "addrotation %.3f %.3f %.3f %.3f") -> None:
         recordLog(f"Processing input for {dev_name}: {vec_input}")
         cal = self.config.calibration_settings
         
@@ -146,9 +144,9 @@ class Actuation:
             num_axes = len(dev_config.get("axes", ["x"]))
             try:
                 if num_axes == 1:
-                    message = command % (-vec_input[0], str(self.config.idx2))
+                    message = command % (-vec_input[0], 0.0, 0.0, self.config.angle)
                 else:
-                    message = command % (-vec_input[0], -vec_input[1], vec_input[2], str(self.config.idx2))
+                    message = command % (-vec_input[0], -vec_input[1], vec_input[2], self.config.angle)
                 print(f"{dev_name} : {message}")
                 recordLog(f"Preparing to send for {dev_name}: {message}")
                 self.sock.sendto(message.encode(), (self.udp_ip, self.udp_port))
