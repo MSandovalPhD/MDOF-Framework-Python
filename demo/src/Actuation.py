@@ -144,9 +144,9 @@ class Actuation:
             num_axes = len(dev_config.get("axes", ["x"]))
             try:
                 if num_axes == 1:
-                    message = command % (-vec_input[0], 0.0, 0.0, self.config.angle)
+                    message = command % (vec_input[0], 0.0, 0.0, self.config.angle)
                 else:
-                    message = command % (-vec_input[0], -vec_input[1], vec_input[2], self.config.angle)
+                    message = command % (vec_input[0], vec_input[1], vec_input[2], self.config.angle)
                 print(f"{dev_name} : {message}")
                 recordLog(f"Preparing to send for {dev_name}: {message}")
                 self.sock.sendto(message.encode(), (self.udp_ip, self.udp_port))
