@@ -3,6 +3,8 @@ from pathlib import Path
 import json
 from .dynamic_ontology import DynamicOntology
 from .movement_registry import MovementRegistry, MovementType
+from .udp_client import UDPClient, MovementVector, MovementCommand
+from .game_configs import get_unity_game_config
 
 class Controllers:
     """Manages input devices using dynamic configuration from the ontology system."""
@@ -21,6 +23,9 @@ class Controllers:
         self.callbacks = callbacks
         self.init_status = init_status
         
+        # Initialize UDP client for Unity game
+        self.udp_client = UDPClient()
+        
         # Load default configurations
         self._load_default_configs()
         
@@ -36,6 +41,10 @@ class Controllers:
     
     def _load_default_configs(self):
         """Load default controller and game configurations."""
+        # Register Unity game configuration
+        unity_config = get_unity_game_config()
+        self.ontology.register_game("unity_vr_game", unity_config)
+        
         # Register default controllers
         self.ontology.register_controller(
             name="Bluetooth_mouse",
@@ -43,42 +52,19 @@ class Controllers:
             pid="b03a",
             controller_type="mouse",
             library="pywinusb",
-            axes=["x"],
+            axes=["x", "y"],
             buttons=["left_click", "right_click"],
             command="mouse",
             calibration={"deadzone": 0.1, "scale_factor": 1.0}
         )
         
-        self.ontology.register_controller(
-            name="PS4_Controller",
-            vid="054c",
-            pid="09cc",
-            controller_type="gamepad",
-            library="pywinusb",
-            axes=["x", "y", "z"],
-            buttons=["btn1", "btn2"],
-            command="default",
-            calibration={"deadzone": 0.1, "scale_factor": 1.0}
-        )
-        
-        # Register default movements
-        self.ontology.movement_registry.register_movement(
-            name="rotate_x",
-            movement_type=MovementType.ROTATION,
-            parameters={"axis": "x", "speed": 1.0}
-        )
-        
-        self.ontology.movement_registry.register_movement(
-            name="rotate_y",
-            movement_type=MovementType.ROTATION,
-            parameters={"axis": "y", "speed": 1.0}
-        )
-        
-        self.ontology.movement_registry.register_movement(
-            name="rotate_z",
-            movement_type=MovementType.ROTATION,
-            parameters={"axis": "z", "speed": 1.0}
-        )
+        # Register movements for Unity game
+        for name, movement_data in unity_config["movements"].items():
+            self.ontology.movement_registry.register_movement(
+                name=name,
+                movement_type=MovementType(movement_data["type"]),
+                parameters=movement_data["parameters"]
+            )
     
     def _initialize_device(self):
         """Initialize the input device based on available controllers."""
@@ -89,7 +75,6 @@ class Controllers:
             return
         
         # For now, use the first available controller
-        # In a real implementation, you would want to let the user choose
         self.controller_name = available_controllers[0]
         self.controller_config = self.ontology.get_controller_config(self.controller_name)
         
@@ -98,6 +83,11 @@ class Controllers:
             self.state["axes"][axis] = 0.0
         for button in self.controller_config.buttons:
             self.state["buttons"][button] = False
+        
+        # Connect to Unity game
+        if self.game_id == "unity_vr_game":
+            if not self.udp_client.connect():
+                print("Warning: Failed to connect to Unity game")
         
         self.init_status(0)
     
@@ -125,22 +115,38 @@ class Controllers:
     
     def _process_state(self):
         """Process the current state and trigger appropriate callbacks."""
+        if self.game_id != "unity_vr_game":
+            return
+        
         # Get calibration settings
         calibration = self.controller_config.calibration
         deadzone = float(calibration.get("deadzone", 0.1))
         scale_factor = float(calibration.get("scale_factor", 1.0))
         
-        # Process axes
-        for axis, value in self.state["axes"].items():
-            if abs(value) > deadzone:
-                scaled_value = value * scale_factor
-                if axis in self.callbacks:
-                    self.callbacks[axis](scaled_value)
+        # Process axes for Unity game
+        if "x" in self.state["axes"]:
+            x_value = self.state["axes"]["x"]
+            if abs(x_value) > deadzone:
+                scaled_value = x_value * scale_factor
+                if scaled_value > 0:
+                    self.udp_client.send_rotation(MovementVector(0, 1, 0))  # Rotate right
+                else:
+                    self.udp_client.send_rotation(MovementVector(0, -1, 0))  # Rotate left
         
-        # Process buttons
-        for button, value in self.state["buttons"].items():
-            if value and button in self.callbacks:
-                self.callbacks[button]()
+        if "y" in self.state["axes"]:
+            y_value = self.state["axes"]["y"]
+            if abs(y_value) > deadzone:
+                scaled_value = y_value * scale_factor
+                if scaled_value > 0:
+                    self.udp_client.send_movement(MovementVector(0, 0, 1))  # Forward
+                else:
+                    self.udp_client.send_movement(MovementVector(0, 0, -1))  # Backward
+        
+        # Process buttons for Unity game
+        if "left_click" in self.state["buttons"] and self.state["buttons"]["left_click"]:
+            self.udp_client.send_brake()
+        elif "right_click" in self.state["buttons"] and self.state["buttons"]["right_click"]:
+            self.udp_client.send_release()
     
     def register_movement(self, name: str, movement_type: MovementType,
                          parameters: Dict, conditions: Optional[Dict] = None):
@@ -228,4 +234,9 @@ class Controllers:
                     name=name,
                     movements=pattern_data["movements"],
                     conditions=pattern_data.get("conditions")
-                ) 
+                )
+    
+    def __del__(self):
+        """Cleanup when the controller is destroyed."""
+        if hasattr(self, 'udp_client'):
+            self.udp_client.disconnect() 

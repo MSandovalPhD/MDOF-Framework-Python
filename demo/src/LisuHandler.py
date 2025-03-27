@@ -1,3 +1,8 @@
+"""
+LISU Framework Handler Module
+Core handler for the LISU framework, managing device input, transformations, and visualisation.
+"""
+
 import Actuation
 from LISU.devices import InputDevice
 import pywinusb.hid as hid
@@ -8,88 +13,224 @@ from pathlib import Path
 import threading
 import signal
 import sys
-from LISU.datalogging import recordLog
+from LISU.logging import LisuLogger
+from LISU.optimisation import OptimisationManager
+import time
+from LISU.transformation import TransformationManager
 
 class LisuManager:
+    """
+    Manages the LISU framework's core functionality.
+    
+    This class implements the Device Layer of the LISU framework, handling:
+    - Input device detection and configuration
+    - Visualisation selection and management
+    - Device state processing and command mapping
+    - Calibration and button mapping
+    
+    The framework supports:
+    - Multiple input devices (mice, gamepads, VR controllers)
+    - Various visualisation options (3D viewers, VR applications)
+    - Linear and non-linear input transformations
+    - Dynamic device mapping and calibration
+    - Performance optimisations for input processing
+    """
+    
     def __init__(self):
-        self.device = None
-        self.dev_name = ""
+        """Initialise the LISU Manager with logging and core components."""
+        # Set up logging
+        self.logger = LisuLogger()
+        self.logger.log_event("framework_started", {"version": "1.0.0"})
+        
+        # Initialise core components
+        self.config = self._load_config()
         self.running = threading.Event()
         self.running.set()
+        self.current_visualisation = None
+        self.dev_name = None
+        self.transformation_manager = TransformationManager()
+        self.optimisation_manager = OptimisationManager()
         self.use_axis = "x"
         self.button_mappings = {}
         self.speed_factor = 1.0
+        
+        # Load configuration
         config_path = Path(__file__).parent / "data" / "visualisation_config.json"
-        print(f"Looking for config at: {config_path}")
+        self.logger.log_event("loading_config", {"path": str(config_path)})
         self.config = self._load_config(config_path)
+        
+        # Initialise visualisation and actuation
         self.selected_visualisation = self.select_visualisation()
         self.actuation = Actuation.Actuation(selected_visualisation=self.selected_visualisation)
+        
+        # Set up signal handling
         signal.signal(signal.SIGINT, self.signal_handler)
+        
+        self.logger.log_event("initialisation_complete", {
+            "visualisation": self.selected_visualisation,
+            "config_loaded": bool(self.config)
+        })
 
     def signal_handler(self, sig, frame):
-        recordLog("Received Ctrl+C, stopping")
+        """Handle Ctrl+C signal to gracefully stop the application."""
+        self.logger.log_event("shutdown_signal_received", {"signal": "SIGINT"})
         self.running.clear()
 
-    def _load_config(self, config_path: Path) -> Dict:
+    def _load_config(self, config_path: Path = None) -> Dict:
+        """
+        Load and validate the configuration file.
+        
+        Args:
+            config_path: Path to the configuration file
+            
+        Returns:
+            Dict containing the loaded configuration
+            
+        Raises:
+            ValueError: If configuration file is invalid
+        """
         default_config = {
             "visualisation": {
-                "options": ["Drishti-v2.6.4", "ParaView"],
+                "options": ["Drishti-v2.6.4", "ParaView", "Unity_VR_Game"],
                 "selected": None,
-                "render_options": {"resolution": "1920x1080"}
+                "render_options": {
+                    "resolution": "1920x1080",
+                    "visualisations": {
+                        "Drishti-v2.6.4": {"udp_ip": "127.0.0.1", "udp_port": 7755, "command": "addrotation %.3f %.3f %.3f %.3f"},
+                        "ParaView": {"udp_ip": "192.168.1.100", "udp_port": 7766, "command": "rotate %.3f %.3f %.3f"},
+                        "Unity_VR_Game": {"udp_ip": "127.0.0.1", "udp_port": 12345, "command": "move %.3f %.3f %.3f"}
+                    }
+                }
             },
-            "actuation": {"config": {"x": 0.0, "y": 0.0, "z": 0.0}, "commands": {"default": "addrotation %.3f %.3f %.3f %.3f"}},
+            "actuation": {
+                "config": {"x": 0.0, "y": 0.0, "z": 0.0},
+                "commands": {
+                    "default": "addrotation %.3f %.3f %.3f %.3f",
+                    "mouse": "addrotation %.3f %.3f %.3f %.3f",
+                    "unity_movement": "move %.3f %.3f %.3f",
+                    "unity_rotation": "rotate %.3f %.3f %.3f",
+                    "unity_brake": "BRAKE",
+                    "unity_release": "RELEASE"
+                }
+            },
             "calibration": {
                 "default": {"deadzone": 0.1, "scale_factor": 1.0},
-                "devices": {}
+                "devices": {
+                    "Bluetooth_mouse": {
+                        "deadzone": 0.1,
+                        "scale_factor": 1.0,
+                        "axis_mapping": {
+                            "x": "unity_rotation",
+                            "y": "unity_movement"
+                        },
+                        "button_mapping": {
+                            "left_click": "unity_brake",
+                            "right_click": "unity_release"
+                        }
+                    }
+                }
             },
             "input_devices": {
-                "Bluetooth_mouse": {"vid": "046d", "pid": "b03a", "type": "mouse", "library": "pywinusb", "axes": ["x"], "buttons": ["left_click", "right_click"], "command": "mouse"},
-                "PS4_Controller": {"vid": "054c", "pid": "09cc", "type": "gamepad", "library": "pywinusb", "axes": ["x", "y", "z"], "buttons": ["btn1", "btn2"], "command": "default"}
+                "Bluetooth_mouse": {
+                    "vid": "046d",
+                    "pid": "b03a",
+                    "type": "mouse",
+                    "library": "pywinusb",
+                    "axes": ["x", "y"],
+                    "buttons": ["left_click", "right_click"],
+                    "command": "mouse"
+                }
             }
         }
+        
         try:
-            if config_path.exists():
+            if config_path and config_path.exists():
                 with open(config_path, "r") as f:
                     config_content = f.read()
-                    print(f"Raw config content: {config_content}")  # Debug raw file content
+                    self.logger.log_event("config_loaded", {"content": config_content})
                     config = json.loads(config_content)
-                    print(f"Parsed config: {config}")
+                    
+                    # Load and validate input devices
                     loaded_devices = config.get("input_devices", default_config["input_devices"])
-                    print(f"Loaded input_devices: {loaded_devices}")
+                    self.logger.log_event("devices_loaded", {"devices": loaded_devices})
                     config["input_devices"] = loaded_devices
+                    
+                    # Ensure calibration settings exist
                     if "calibration" not in config:
                         config["calibration"] = default_config["calibration"]
                     if "devices" not in config["calibration"]:
                         config["calibration"]["devices"] = {}
+                    
                     return {k: config.get(k, default_config[k]) for k in default_config}
             else:
-                recordLog(f"No JSON config found at {config_path}, using default configuration with options")
-                print(f"Config file not found at {config_path}, using default with input_devices: {default_config['input_devices']}")
+                self.logger.log_warning("No configuration file found", {"path": str(config_path)})
                 return default_config
+                
         except json.JSONDecodeError as e:
-            print(f"Invalid JSON in {config_path}: {e}")
-            recordLog(f"Invalid JSON in {config_path}: {e}")
+            self.logger.log_error(e, {"file": str(config_path)})
             return default_config
         except Exception as e:
-            print(f"Failed to load config from {config_path}: {e}")
-            recordLog(f"Failed to load config from {config_path}: {e}")
+            self.logger.log_error(e, {"file": str(config_path)})
             return default_config
 
     def select_visualisation(self) -> str:
+        """
+        Dynamically generate visualisation options from the ontology.
+        
+        Returns:
+            str: The selected visualisation name
+        """
         options = self.config["visualisation"]["options"]
         if not options:
-            raise ValueError("No visualisation options defined in config.")
+            raise ValueError("No visualisation options defined in configuration.")
+        
         qprompt.clear()
-        print("Available 3D Visualisations:")
-        for i, vis in enumerate(options, 1):
-            print(f"{i}. {vis}")
-        choice = qprompt.ask(f"Select a visualisation (1-{len(options)}): ", int, min=1, max=len(options))
+        print("Available Visualisations:")
+        
+        # Get visualisation types from ontology
+        vis_types = self.config.get("ontology", {}).get("visualisations", {}).get("types", [])
+        
+        # Group visualisations by type
+        grouped_options = {}
+        for option in options:
+            vis_config = self.config["visualisation"]["render_options"]["visualisations"].get(option, {})
+            vis_type = vis_config.get("type", "unknown")
+            if vis_type not in grouped_options:
+                grouped_options[vis_type] = []
+            grouped_options[vis_type].append(option)
+        
+        # Display grouped options
+        for vis_type in vis_types:
+            if vis_type in grouped_options:
+                print(f"\n{vis_type.upper()} Applications:")
+                for i, vis in enumerate(grouped_options[vis_type], 1):
+                    print(f"{i}. {vis}")
+        
+        # Get user selection
+        total_options = len(options)
+        choice = qprompt.ask(f"Select a visualisation (1-{total_options}): ", int, min=1, max=total_options)
         selected = options[choice - 1]
+        
+        # Update configuration
         self.config["visualisation"]["selected"] = selected
-        print(f"Selected visualisation: {selected}")
+        
+        # Get visualisation type and available functions
+        vis_config = self.config["visualisation"]["render_options"]["visualisations"].get(selected, {})
+        vis_type = vis_config.get("type", "unknown")
+        available_functions = self.config.get("ontology", {}).get("visualisations", {}).get("functions", {}).get(vis_type, [])
+        
+        print(f"\nSelected visualisation: {selected} ({vis_type})")
+        print(f"Available functions: {', '.join(available_functions)}")
+        
         return selected
 
     def list_devices(self) -> List[Tuple[str, str, str, Dict]]:
+        """
+        List all available HID devices and match them with configured devices.
+        
+        Returns:
+            List of tuples containing (vid, pid, name, config) for matched devices
+        """
         all_hids = hid.find_all_hid_devices()
         print(f"Detected HID devices: {len(all_hids)} found")
         for device in all_hids:
@@ -98,7 +239,7 @@ class LisuManager:
             print(f"HID Device - VID: {vid}, PID: {pid}, Product: {device.product_name}")
 
         input_devices = self.config["input_devices"]
-        print(f"Configured devices from JSON: {input_devices}")
+        print(f"Configured devices from configuration: {input_devices}")
         available_devices = []
         for device in all_hids:
             vid = f"{device.vendor_id:04x}".lower()
@@ -108,14 +249,20 @@ class LisuManager:
                     print(f"Match found: {name} (VID: {vid}, PID: {pid})")
                     available_devices.append((vid, pid, name, config))
         if not available_devices:
-            print("No matches between detected HID devices and config.")
+            print("No matches between detected HID devices and configuration.")
         return available_devices
 
     def select_device(self) -> Optional[Tuple[str, str, str, Dict]]:
+        """
+        Allow user to select an input device from available devices.
+        
+        Returns:
+            Tuple of (vid, pid, name, config) for selected device, or None if no device selected
+        """
         devices = self.list_devices()
         if not devices:
             print("No compatible devices found.")
-            recordLog("No compatible devices found.")
+            self.logger.log_warning("No compatible devices found.")
             return None
 
         qprompt.clear()
@@ -126,6 +273,15 @@ class LisuManager:
         return devices[choice - 1]
 
     def configure_buttons(self, dev_config: Dict) -> Dict:
+        """
+        Configure button mappings for a device.
+        
+        Args:
+            dev_config: Device configuration dictionary
+            
+        Returns:
+            Dictionary of button mappings
+        """
         if not qprompt.ask_yesno("Configure buttons? (y/n)", default="n"):
             return {}
         
@@ -158,146 +314,372 @@ class LisuManager:
                 mappings[selected_btn] = {"action": selected_action}
 
             print(f"Configured {selected_btn} to {selected_action}")
-            recordLog(f"Configured {selected_btn} to {selected_action}")
+            self.logger.log_event("button_mapping_configured", {
+                "device": self.dev_name,
+                "button": selected_btn,
+                "action": selected_action
+            })
 
         return mappings
 
     def configure_device(self, vid: str, pid: str, name: str, dev_config: Dict) -> Optional[InputDevice]:
+        """
+        Configure an input device with the specified parameters.
+        
+        Args:
+            vid: Vendor ID of the device
+            pid: Product ID of the device
+            name: Name of the device
+            dev_config: Device configuration dictionary
+            
+        Returns:
+            Configured InputDevice instance, or None if configuration fails
+        """
         try:
             vid_int = int(vid, 16)
             pid_int = int(pid, 16)
             device = InputDevice(vid_int, pid_int, name, dev_config)
             device.open()
+            
+            # Apply calibration settings
             cal = self.config["calibration"]["devices"].get(name, self.config["calibration"]["default"])
             deadzone = float(cal.get("deadzone", 0.1))
             scale_factor = float(cal.get("scale_factor", 1.0))
+            
+            # Set up device callbacks based on type
             if dev_config["type"] == "mouse":
                 mapping = cal.get("axis_mapping", {"x": "mouse_x", "y": "none", "z": "none"})
                 device.callback = lambda state: self._process_mouse_state(state, deadzone, scale_factor, mapping, dev_config)
             else:
                 device.callback = lambda state: self._process_state(state, deadzone, scale_factor, dev_config)
+            
+            # Configure button mappings
             self.button_mappings = self.configure_buttons(dev_config)
             device.button_callback = lambda state, buttons: self._handle_buttons(state, buttons, dev_config)
+            
             self.dev_name = name
             print(f"Configured {name} successfully")
-            recordLog(f"Configured {name} successfully")
+            self.logger.log_event("device_configured", {
+                "device": self.dev_name,
+                "config": dev_config
+            })
             return device
         except Exception as e:
             print(f"Failed to configure {name}: {e}")
-            recordLog(f"Failed to configure {name}: {e}")
+            self.logger.log_error(e, {
+                "device": name,
+                "config": dev_config
+            })
             return None
 
-    def _handle_buttons(self, state: Dict, buttons: List[int], dev_config: Dict) -> None:
-        if not self.running.is_set():
-            return
-        for i, btn_state in enumerate(buttons):
-            if btn_state == 1 and i < len(dev_config.get("buttons", [])):
-                btn_name = dev_config["buttons"][i]
-                mapping = self.button_mappings.get(btn_name)
-                if mapping:
+    def _process_state(self, state: Dict, deadzone: float, scale_factor: float, dev_config: Dict) -> None:
+        """
+        Process device state using configured transformations and optimisations.
+        
+        Args:
+            state: Current state of the device
+            deadzone: Base deadzone value
+            scale_factor: Base scale factor
+            dev_config: Device configuration dictionary
+            
+        This method:
+        1. Updates optimised state tracking
+        2. Retrieves device-specific mappings
+        3. Applies cached transformations
+        4. Sends transformed values to the visualisation
+        5. Logs all transformations and errors
+        """
+        try:
+            # Update optimised state
+            changed_keys = self.optimisation_manager.state.update(state)
+            if not changed_keys:
+                return  # Skip processing if no changes
+                
+            device_type = dev_config["type"]
+            mappings = self.config["device_mappings"].get(device_type, {})
+            
+            for axis, mapping in mappings.items():
+                if axis not in changed_keys:
+                    continue
+                    
+                # Get transformation configuration
+                transform = mapping["transform"]
+                transform_type = transform["type"]
+                transform_config = transform["config"]
+                
+                # Try to get cached transformation
+                cache_key = f"{device_type}_{axis}_{state[axis]}"
+                transformed_value = self.optimisation_manager.cache.get(cache_key)
+                
+                if transformed_value is None:
+                    # Apply transformation if not cached
+                    transformed_value = self.optimisation_manager.monitor.measure(
+                        "transformation_time",
+                        lambda: self.transformation_manager.transform_input(
+                            state[axis], transform_type, transform_config
+                        )
+                    )
+                    self.optimisation_manager.cache.set(cache_key, transformed_value)
+                    self.optimisation_manager.monitor.metrics.cache_misses += 1
+                else:
+                    self.optimisation_manager.monitor.metrics.cache_hits += 1
+                
+                # Log transformation
+                self.logger.log_transformation(
+                    self.dev_name,
+                    state[axis],
+                    transformed_value,
+                    transform_type,
+                    transform_config
+                )
+                
+                # Send transformed value to output
+                if transformed_value != 0.0:  # Only send non-zero values
+                    self._send_command(mapping["output"], transformed_value)
+                    
+        except Exception as e:
+            self.logger.log_error(e, {
+                "device": self.dev_name,
+                "state": state,
+                "config": dev_config
+            })
+            
+    def _process_mouse_state(self, state: Dict, deadzone: float, scale_factor: float, mapping: Dict, dev_config: Dict) -> None:
+        """
+        Process mouse state using optimised transformations.
+        
+        Args:
+            state: Current state of the mouse
+            deadzone: Base deadzone value
+            scale_factor: Base scale factor
+            mapping: Axis mapping configuration
+            dev_config: Device configuration dictionary
+        """
+        try:
+            # Update optimised state
+            changed_keys = self.optimisation_manager.state.update(state)
+            if not changed_keys:
+                return  # Skip processing if no changes
+                
+            mouse_mappings = self.config["device_mappings"].get("mouse", {})
+            
+            for axis, axis_mapping in mouse_mappings.items():
+                if axis not in changed_keys:
+                    continue
+                    
+                # Get transformation configuration
+                transform = axis_mapping["transform"]
+                transform_type = transform["type"]
+                transform_config = transform["config"]
+                
+                # Try to get cached transformation
+                cache_key = f"mouse_{axis}_{state[axis]}"
+                transformed_value = self.optimisation_manager.cache.get(cache_key)
+                
+                if transformed_value is None:
+                    # Apply transformation if not cached
+                    transformed_value = self.optimisation_manager.monitor.measure(
+                        "transformation_time",
+                        lambda: self.transformation_manager.transform_input(
+                            state[axis], transform_type, transform_config
+                        )
+                    )
+                    self.optimisation_manager.cache.set(cache_key, transformed_value)
+                    self.optimisation_manager.monitor.metrics.cache_misses += 1
+                else:
+                    self.optimisation_manager.monitor.metrics.cache_hits += 1
+                
+                # Log transformation
+                self.logger.log_transformation(
+                    self.dev_name,
+                    state[axis],
+                    transformed_value,
+                    transform_type,
+                    transform_config
+                )
+                
+                # Send transformed value to output
+                if transformed_value != 0.0:  # Only send non-zero values
+                    self._send_command(axis_mapping["output"], transformed_value)
+                    
+        except Exception as e:
+            self.logger.log_error(e, {
+                "device": self.dev_name,
+                "state": state,
+                "config": dev_config
+            })
+            
+    def _handle_buttons(self, state: Dict, buttons: List[str], dev_config: Dict) -> None:
+        """
+        Handle button presses using threshold transformations.
+        
+        Args:
+            state: Current state of the device
+            buttons: List of pressed buttons
+            dev_config: Device configuration dictionary
+        """
+        try:
+            for button in buttons:
+                if button not in self.button_mappings:
+                    continue
+                    
+                mapping = self.button_mappings[button]
+                transform_config = {
+                    "threshold": 0.5,
+                    "high_value": 1.0,
+                    "low_value": 0.0
+                }
+                
+                # Apply threshold transformation
+                value = state.get(button, 0.0)
+                transformed_value = self.transformation_manager.transform_input(
+                    value, "non_linear.threshold", transform_config
+                )
+                
+                if transformed_value > 0.0:
                     action = mapping["action"]
                     if action == "change_axis":
-                        self.use_axis = mapping["axis"]
-                        print(f"Button {btn_name} switched to {self.use_axis}-axis")
-                        recordLog(f"Button {btn_name} switched to {self.use_axis}-axis")
+                        self._change_axis(mapping["axis"])
                     elif action == "increase_speed":
-                        self.speed_factor = min(self.speed_factor + 0.5, 5.0)
-                        print(f"Speed increased to {self.speed_factor}")
-                        recordLog(f"Speed increased to {self.speed_factor}")
+                        self._adjust_speed(1.1)
                     elif action == "decrease_speed":
-                        self.speed_factor = max(self.speed_factor - 0.5, 0.1)
-                        print(f"Speed decreased to {self.speed_factor}")
-                        recordLog(f"Speed decreased to {self.speed_factor}")
-
-    def _process_mouse_state(self, state: Dict, deadzone: float, scale_factor: float, mapping: Dict, dev_config: Dict) -> None:
-        if not self.running.is_set():
-            return
-        x = state.get("x", 0.0) * scale_factor * self.speed_factor
-        vec_input = {"x": [x, 0.0, 0.0], "y": [0.0, x, 0.0], "z": [0.0, 0.0, x]}
-        selected_vec = vec_input.get(self.use_axis, [x, 0.0, 0.0])
-        recordLog(f"Using {self.use_axis}-axis for {self.dev_name}: {selected_vec}")
-        command = self.config["actuation"]["commands"].get(dev_config.get("command", "mouse"), "addrotation %.3f %.3f %.3f %.3f")
-        print(f"Calling actuation for {self.dev_name} with input: {selected_vec}")
-        self.actuation.process_input(selected_vec, self.dev_name, command)
-
-    def _process_state(self, state: Dict, deadzone: float, scale_factor: float, dev_config: Dict) -> None:
-        if not self.running.is_set():
-            return
-        vec_input = [
-            state.get("x", 0.0) * scale_factor * self.speed_factor if abs(state.get("x", 0.0)) > deadzone else 0.0,
-            state.get("y", 0.0) * scale_factor * self.speed_factor if abs(state.get("y", 0.0)) > deadzone else 0.0,
-            state.get("z", 0.0) * scale_factor * self.speed_factor if abs(state.get("z", 0.0)) > deadzone else 0.0
-        ]
-        command = self.config["actuation"]["commands"].get(dev_config.get("command", "default"), "addrotation %.3f %.3f %.3f %.3f")
-        print(f"Calling actuation for {self.dev_name} with input: {vec_input}")
-        recordLog(f"Calling actuation for {self.dev_name} with input: {vec_input}")
-        self.actuation.process_input(vec_input, self.dev_name, command)
+                        self._adjust_speed(0.9)
+                        
+        except Exception as e:
+            print(f"Error handling buttons: {e}")
+            self.logger.log_error(e, {
+                "device": self.dev_name,
+                "state": state,
+                "config": dev_config
+            })
+            
+    def _send_command(self, command: str, value: float) -> None:
+        """
+        Send command to the current visualisation.
+        
+        Args:
+            command: Command to send
+            value: Value associated with the command
+        """
+        try:
+            if self.selected_visualisation:
+                self.actuation.process_input([value, 0.0, 0.0], self.dev_name, command)
+        except Exception as e:
+            print(f"Error sending command: {e}")
+            self.logger.log_error(e, {
+                "device": self.dev_name,
+                "command": command,
+                "value": value
+            })
 
     def configure_and_run(self):
-        device_info = self.select_device()
-        if not device_info:
-            print("Exiting due to no device selected.")
-            return
+        """
+        Configure the LISU framework and run the main loop.
+        
+        This method handles device selection, configuration, and the main execution loop.
+        It also manages the visualisation selection and device monitoring.
+        """
+        try:
+            # Select and configure device
+            device_info = self.select_device()
+            if not device_info:
+                self.logger.log_warning("No device selected", {"action": "exiting"})
+                return
+                
+            vid, pid, name, dev_config = device_info
+            device = self.configure_device(vid, pid, name, dev_config)
+            if not device:
+                self.logger.log_warning("Failed to configure device", {"action": "exiting"})
+                return
+                
+            # Select visualisation
+            if not self.select_visualisation():
+                self.logger.log_warning("No visualisation selected", {"action": "exiting"})
+                return
+                
+            # Start device monitoring
+            device.start_monitoring()
+            
+            # Main loop
+            while self.running.is_set():
+                try:
+                    # Process any pending events
+                    batch = self.optimisation_manager.batcher.add({
+                        "type": "tick",
+                        "timestamp": time.time()
+                    })
+                    
+                    if batch:
+                        self.optimisation_manager.monitor.measure(
+                            "event_processing_time",
+                            lambda: self._process_event_batch(batch)
+                        )
+                    
+                    # Process any pending commands
+                    if self.selected_visualisation:
+                        self.optimisation_manager.monitor.measure(
+                            "command_send_time",
+                            lambda: self.selected_visualisation.process_commands()
+                        )
+                        
+                    # Sleep briefly to prevent CPU overuse
+                    time.sleep(0.01)
+                    
+                except KeyboardInterrupt:
+                    self.logger.log_event("shutdown_signal_received", {"signal": "SIGINT"})
+                    self.running.clear()
+                    break
+                except Exception as e:
+                    self.logger.log_error(e, {
+                        "device": self.dev_name,
+                        "state": None,
+                        "config": None
+                    })
+                    time.sleep(1)  # Prevent rapid error loops
+                    
+            # Cleanup
+            device.stop_monitoring()
+            device.close()
+            
+        except Exception as e:
+            self.logger.log_error(e, {
+                "device": None,
+                "state": None,
+                "config": None
+            })
+        finally:
+            self.running.clear()
 
-        vid, pid, name, dev_config = device_info
-        self.device = self.configure_device(vid, pid, name, dev_config)
-        if self.device:
-            print(f"Activating {name} for {self.selected_visualisation}")
-            print("[Press Ctrl+C to stop...]")
-            recordLog(f"Activating {name} for {self.selected_visualisation}")
-            try:
-                while self.running.is_set() and self.device.device.is_plugged():
-                    threading.Event().wait(0.1)
-            except Exception as e:
-                print(f"Unexpected error in run loop: {e}")
-                recordLog(f"Unexpected error in run loop: {e}")
-            finally:
-                self.running.clear()
-                self.device.close()
-                print(f"Closed {name}")
-                recordLog(f"Closed {name}")
-                sys.exit(0)
+    def _process_event_batch(self, batch: List[Dict[str, Any]]):
+        """Process a batch of events."""
+        for event in batch:
+            self.optimisation_manager.monitor.metrics.events_processed += 1
+            # Process event as needed
 
-    def start_gamepad(self, vid: int, pid: int):
-        device_info = self._detect_gamepad(vid, pid)
-        if not device_info:
-            print(f"No gamepad found with VID: {hex(vid)}, PID: {hex(pid)}")
-            recordLog(f"No gamepad found with VID: {hex(vid)}, PID: {hex(pid)}")
-            return
+    def stop(self):
+        """
+        Stop the LISU framework and clean up resources.
+        """
+        self.running.clear()
+        if hasattr(self, 'selected_visualisation') and self.selected_visualisation:
+            self.selected_visualisation.close()
 
-        vid_str, pid_str, name, dev_config = device_info
-        self.device = self.configure_device(vid_str, pid_str, name, dev_config)
-        if self.device:
-            print(f"Starting gamepad {name} (VID: {vid_str}, PID: {pid_str}) for {self.selected_visualisation}")
-            recordLog(f"Starting gamepad {name} (VID: {vid_str}, PID: {pid_str}) for {self.selected_visualisation}")
-            try:
-                while self.running.is_set() and self.device.device.is_plugged():
-                    threading.Event().wait(0.1)
-            except Exception as e:
-                print(f"Unexpected error in gamepad loop: {e}")
-                recordLog(f"Unexpected error in gamepad loop: {e}")
-            finally:
-                self.running.clear()
-                self.device.close()
-                print(f"Closed gamepad {name}")
-                recordLog(f"Closed gamepad {name}")
-                sys.exit(0)
+    def __del__(self):
+        """
+        Destructor to ensure proper cleanup of resources.
+        """
+        self.stop()
 
-    def _detect_gamepad(self, vid: int, pid: int) -> Optional[Tuple[str, str, str, Dict]]:
-        all_hids = hid.find_all_hid_devices()
-        input_devices = self.config["input_devices"]
-        vid_str = f"{vid:04x}".lower()
-        pid_str = f"{pid:04x}".lower()
-        for device in all_hids:
-            dev_vid = f"{device.vendor_id:04x}".lower()
-            dev_pid = f"{device.product_id:04x}".lower()
-            for name, config in input_devices.items():
-                if (config.get("vid") == dev_vid and config.get("pid") == dev_pid and
-                    config.get("type") == "gamepad" and dev_vid == vid_str and dev_pid == pid_str):
-                    print(f"Found gamepad: {name} (VID: {dev_vid}, PID: {dev_pid})")
-                    recordLog(f"Found gamepad: {name} (VID: {dev_vid}, PID: {dev_pid})")
-                    return (dev_vid, dev_pid, name, config)
-        return None
+    def cleanup(self):
+        """Clean up resources and log final metrics."""
+        self.logger.log_event("framework_shutting_down", {
+            **self.logger.get_metrics(),
+            **self.optimisation_manager.monitor.get_metrics()
+        })
+        self.transformation_manager.clear_history()
+        self.optimisation_manager.cleanup()
+        self.stop()
+        self.logger.cleanup()
 
 if __name__ == "__main__":
     lisu = LisuManager()
