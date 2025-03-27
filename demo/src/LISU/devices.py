@@ -4,6 +4,7 @@ import pygame
 import time
 from LISU.logging import LisuLogger
 import numpy as np
+import threading
 
 # Initialize logger
 logger = LisuLogger()
@@ -20,9 +21,9 @@ class InputDevice:
     def __init__(self, name: str, vid: int, pid: int, device_type: str,
                  library: str = "pywinusb", axes: List[str] = None,
                  buttons: List[str] = None, command: str = "unknown",
-                 logger: Optional[LisuLogger] = None):
+                 logger: Optional[LisuLogger] = None, device_index: int = 0):
         """
-        Initialize an input device.
+        Initialise an input device.
         
         Args:
             name: Name of the device
@@ -34,6 +35,7 @@ class InputDevice:
             buttons: List of available buttons
             command: Default command type
             logger: Optional logger instance
+            device_index: Index of the device (for pygame devices)
         """
         self.name = name
         self.vid = vid
@@ -45,9 +47,11 @@ class InputDevice:
         self.command = command
         self.logger = logger or LisuLogger()
         self.device = None
-        self.running = False
+        self.running = threading.Event()  # Initialize as threading.Event
+        self.running.set()  # Set the event to True initially
         self.callback = None
         self.button_callback = None
+        self.device_index = device_index
         self.state = {
             "axes": {axis: 0.0 for axis in self.axes},
             "buttons": {button: False for button in self.buttons}
@@ -114,62 +118,61 @@ class InputDevice:
             raise
     
     def _start_pygame_monitoring(self):
-        """Start monitoring using pygame."""
+        """Start monitoring pygame joystick events."""
         try:
-            # Find the matching joystick
-            for i in range(pygame.joystick.get_count()):
-                joystick = pygame.joystick.Joystick(i)
-                joystick.init()
-                # Store the joystick instance
-                self.device = joystick
-                break
+            # Initialize pygame joystick
+            pygame.init()
+            pygame.joystick.init()
             
-            if not self.device:
-                raise ValueError("No pygame joystick found")
+            # Get the joystick
+            joystick = pygame.joystick.Joystick(self.device_index)
+            joystick.init()
             
-            self.running = True
-            self._pygame_monitor_loop()
+            print(f"Initialized pygame joystick: {joystick.get_name()}")
             
-            self.logger.log_event("device_started", {
-                "device": self.name,
-                "type": self.device_type,
-                "library": self.library
-            })
+            # Main monitoring loop
+            while self.running.is_set():
+                # Process pygame events
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        self.running.clear()
+                        break
+                
+                # Get current state
+                state = {}
+                
+                # Get axis values
+                for i in range(joystick.get_numaxes()):
+                    axis_value = joystick.get_axis(i)
+                    state[f"axis_{i}"] = axis_value
+                
+                # Get button states
+                for i in range(joystick.get_numbuttons()):
+                    button_state = joystick.get_button(i)
+                    state[f"button_{i}"] = button_state
+                
+                # Call the callback with the current state
+                if self.callback:
+                    print(f"Sending state to callback: {state}")
+                    self.callback(state)
+                
+                # Small delay to prevent CPU overuse
+                pygame.time.wait(10)
+                
         except Exception as e:
-            self.logger.log_error(e, {"context": "Starting pygame monitoring"})
-            raise
-    
-    def _pygame_monitor_loop(self):
-        """Main monitoring loop for pygame devices."""
-        while self.running:
-            for event in pygame.event.get():
-                if event.type == pygame.JOYAXISMOTION:
-                    # Handle axis movement
-                    if self.callback:
-                        axis_name = self.axes[event.axis] if event.axis < len(self.axes) else f"axis_{event.axis}"
-                        self.state["axes"][axis_name] = event.value
-                        self.callback(self.state)
-                
-                elif event.type == pygame.JOYBUTTONDOWN:
-                    # Handle button press
-                    if self.button_callback:
-                        button_name = self.buttons[event.button] if event.button < len(self.buttons) else f"button_{event.button}"
-                        self.state["buttons"][button_name] = True
-                        self.button_callback(button_name, True)
-                
-                elif event.type == pygame.JOYBUTTONUP:
-                    # Handle button release
-                    if self.button_callback:
-                        button_name = self.buttons[event.button] if event.button < len(self.buttons) else f"button_{event.button}"
-                        self.state["buttons"][button_name] = False
-                        self.button_callback(button_name, False)
-            
-            time.sleep(0.01)  # Small delay to prevent CPU overuse
+            print(f"Error in pygame monitoring: {e}")
+            self.logger.log_error(e, {
+                "device": self.name,
+                "type": "pygame_monitoring"
+            })
+        finally:
+            if 'joystick' in locals():
+                joystick.quit()
     
     def stop_monitoring(self):
         """Stop monitoring the device."""
         try:
-            self.running = False
+            self.running.clear()  # Clear the event to stop monitoring
             if self.device:
                 if self.library == "pywinusb":
                     try:

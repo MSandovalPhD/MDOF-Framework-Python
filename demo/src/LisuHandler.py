@@ -332,7 +332,7 @@ class LisuManager:
 
         return mappings
 
-    def configure_device(self, vid: str, pid: str, name: str, dev_config: Dict) -> Optional[InputDevice]:
+    def configure_device(self, vid: str, pid: str, name: str, dev_config: Dict, device_index: int = 0) -> Optional[InputDevice]:
         """
         Configure an input device with the specified parameters.
         
@@ -341,6 +341,7 @@ class LisuManager:
             pid: Product ID of the device
             name: Name of the device
             dev_config: Device configuration dictionary
+            device_index: Index of the device (for pygame devices)
             
         Returns:
             Configured InputDevice instance, or None if configuration fails
@@ -364,7 +365,8 @@ class LisuManager:
                 axes=dev_config["axes"],
                 buttons=dev_config["buttons"],
                 command=dev_config["command"],
-                logger=self.logger
+                logger=self.logger,
+                device_index=device_index  # Pass the device index
             )
             
             # Apply calibration settings
@@ -409,9 +411,6 @@ class LisuManager:
             dev_config: Device configuration dictionary
         """
         try:
-            # Log the incoming state for debugging
-            print(f"Processing state: {state}")
-            
             # Update optimised state
             changed_keys = self.optimisation_manager.state.update(state)
             if not changed_keys:
@@ -431,7 +430,6 @@ class LisuManager:
                     continue
                     
                 value = state[axis]
-                print(f"Processing axis {axis} with value {value}")
                 
                 # Apply deadzone
                 if abs(value) < deadzone:
@@ -465,9 +463,8 @@ class LisuManager:
                     # Send command via UDP
                     try:
                         if hasattr(self, 'actuation') and self.actuation:
-                            print(f"Sending UDP command: {command} to {self.actuation.udp_ip}:{self.actuation.udp_port}")
                             self.actuation.sock.sendto(command.encode(), (self.actuation.udp_ip, self.actuation.udp_port))
-                            print(f"UDP Command sent successfully: {command}")
+                            print(f"UDP Command sent: {command}")
                     except Exception as e:
                         print(f"Error sending UDP command: {e}")
                         self.logger.log_error(e, {
@@ -549,36 +546,55 @@ class LisuManager:
                 "config": dev_config
             })
             
-    def _handle_buttons(self, state: Dict, buttons: List[str], dev_config: Dict) -> None:
+    def _handle_buttons(self, state: Dict, buttons: Dict, dev_config: Dict) -> None:
         """
-        Handle button presses using threshold transformations.
+        Handle button presses and map them to actions.
         
         Args:
-            state: Current state of the device
-            buttons: List of pressed buttons
-            dev_config: Device configuration dictionary
+            state: Current device state
+            buttons: Button states
+            dev_config: Device configuration
         """
         try:
-            # Process each button that has a mapping
-            for button, mapping in self.button_mappings.items():
-                # Check if button is pressed
+            # Check each button in our mappings
+            for button, action in self.button_mappings.items():
                 if button in state and state[button]:
-                    action = mapping["action"]
-                    if action == "change_axis":
-                        self._change_axis(mapping["axis"])
-                    elif action == "increase_speed":
-                        self._adjust_speed(1.1)
-                        print(f"Speed increased to: {self.speed_factor:.2f}")
+                    print(f"Button {button} pressed, executing action: {action}")
+                    if action == "increase_speed":
+                        # Increase the rotation speed by 0.1
+                        if "axis_0" in state:
+                            state["axis_0"] = min(1.0, state["axis_0"] + 0.1)
+                        if "axis_1" in state:
+                            state["axis_1"] = min(1.0, state["axis_1"] + 0.1)
+                        if "axis_2" in state:
+                            state["axis_2"] = min(1.0, state["axis_2"] + 0.1)
+                        if "axis_3" in state:
+                            state["axis_3"] = min(1.0, state["axis_3"] + 0.1)
                     elif action == "decrease_speed":
-                        self._adjust_speed(0.9)
-                        print(f"Speed decreased to: {self.speed_factor:.2f}")
-                        
+                        # Decrease the rotation speed by 0.1
+                        if "axis_0" in state:
+                            state["axis_0"] = max(-1.0, state["axis_0"] - 0.1)
+                        if "axis_1" in state:
+                            state["axis_1"] = max(-1.0, state["axis_1"] - 0.1)
+                        if "axis_2" in state:
+                            state["axis_2"] = max(-1.0, state["axis_2"] - 0.1)
+                        if "axis_3" in state:
+                            state["axis_3"] = max(-1.0, state["axis_3"] - 0.1)
+                    
+                    # Log the button action
+                    self.logger.log_event("button_action", {
+                        "device": self.dev_name,
+                        "button": button,
+                        "action": action,
+                        "state": state
+                    })
+                    
         except Exception as e:
             print(f"Error handling buttons: {e}")
             self.logger.log_error(e, {
                 "device": self.dev_name,
                 "state": state,
-                "config": dev_config
+                "buttons": buttons
             })
             
     def _send_command(self, command: str, value: float) -> None:
@@ -717,7 +733,8 @@ class LisuManager:
                             device_config["vid"],
                             device_config["pid"],
                             joystick.get_name(),
-                            device_config
+                            device_config,
+                            device_index=joystick_index  # Pass the joystick index
                         )
                         
                         if not device:
