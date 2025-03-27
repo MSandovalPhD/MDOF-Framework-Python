@@ -23,8 +23,8 @@ from datetime import datetime
 print("Imported datetime")  # Debug print
 from LisuHandler import LisuManager # Direct import from src/lisu.py
 print("Imported LisuManager from lisu")  # Debug print
-from LISU.datalogging import recordLog  # Import from src/LISU/datalogging.py
-print("Imported recordLog from LISU.datalogging")  # Debug print
+from LISU.logging import LisuLogger  # Import from src/LISU/logging.py
+print("Imported LisuLogger from LISU.logging")  # Debug print
 import threading
 print("Imported threading")  # Debug print
 import signal
@@ -35,6 +35,9 @@ import socket
 print("Imported socket")  # Debug print
 import unittest.mock as mock
 print("Imported unittest.mock")  # Debug print
+
+# Initialize logger
+logger = LisuLogger()
 
 class TestLisuStandalone:
     def __init__(self):

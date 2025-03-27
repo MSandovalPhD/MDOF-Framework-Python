@@ -26,29 +26,21 @@ class LisuLogger:
         self.log_dir = log_dir or Path("logs")
         self.log_dir.mkdir(exist_ok=True)
         
-        # Set up logging format
-        self.log_format = logging.Formatter(
-            '%(asctime)s - %(levelname)s - %(module)s - %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
-        )
-        
         # Create log file with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.log_file = self.log_dir / f"lisu_{timestamp}.log"
         
-        # Set up file handler
+        # Set up file handler with detailed format
         self.file_handler = logging.FileHandler(self.log_file)
-        self.file_handler.setFormatter(self.log_format)
-        
-        # Set up console handler
-        self.console_handler = logging.StreamHandler(sys.stdout)
-        self.console_handler.setFormatter(self.log_format)
+        self.file_handler.setFormatter(logging.Formatter(
+            '%(asctime)s - %(levelname)s - %(module)s - %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        ))
         
         # Set up logger
         self.logger = logging.getLogger("LISU")
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(logging.INFO)
         self.logger.addHandler(self.file_handler)
-        self.logger.addHandler(self.console_handler)
         
         # Set up event logging
         self.event_queue = Queue()
@@ -62,8 +54,6 @@ class LisuLogger:
             "errors": 0,
             "warnings": 0
         }
-        
-        self.logger.info("LISU Logger initialised")
 
     def _process_events(self):
         """Process events from the queue in a separate thread."""
@@ -113,7 +103,7 @@ class LisuLogger:
         }
         self.event_queue.put(event)
         
-        # Also log to standard logger
+        # Only log to file
         log_func = getattr(self.logger, level.lower())
         log_func(f"{event_type}: {json.dumps(details)}")
 
@@ -204,5 +194,4 @@ class LisuLogger:
     def cleanup(self):
         """Clean up logging resources."""
         self.event_queue.put(None)  # Signal event thread to stop
-        self.event_thread.join()
-        self.logger.info("LISU Logger cleaned up") 
+        self.event_thread.join() 

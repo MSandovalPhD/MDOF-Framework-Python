@@ -1,8 +1,12 @@
+import json
 from rdflib import Graph
 from rdflib.query import Result
-from typing import List, Any, Optional, Union
-from LISU.datalogging import recordLog
+from typing import List, Any, Optional, Union, Dict
 from pathlib import Path
+from LISU.logging import LisuLogger
+
+# Initialize logger
+logger = LisuLogger()
 
 ONTOLOGY_ADDRESS = "./data/idoo.owl"
 
@@ -24,6 +28,10 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX lisu: <https://personalpages.manchester.ac.uk/postgrad/mario.sandovalolive/ontology/idoo.owl#>"""
         self._graph: Optional[Graph] = None
+        self.config = {}
+        self.visualisations = {}
+        self.calibrations = {}
+        self.input_devices = {}
 
     def _query(self, query_string: str) -> Result:
         """Execute an RDF query on the ontology, caching the Graph."""
@@ -32,15 +40,15 @@ PREFIX lisu: <https://personalpages.manchester.ac.uk/postgrad/mario.sandovaloliv
             try:
                 self._graph.parse(ONTOLOGY_ADDRESS)
             except FileNotFoundError:
-                recordLog(f"Ontology file not found at {ONTOLOGY_ADDRESS}")
+                logger.error(f"Ontology file not found at {ONTOLOGY_ADDRESS}")
                 return Result([])
             except Exception as e:
-                recordLog(f"Failed to parse ontology: {e}")
+                logger.error(f"Failed to parse ontology: {e}")
                 self._graph = Graph()
         try:
             return self._graph.query(query_string)
         except Exception as e:
-            recordLog(f"Query error: {e}")
+            logger.error(f"Query error: {e}")
             return Result([])
 
     def get_controller_attributes(self) -> dict:

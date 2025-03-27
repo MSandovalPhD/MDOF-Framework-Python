@@ -3,7 +3,10 @@ import socket
 import json
 from typing import List, Optional, Dict
 from pathlib import Path
-from LISU.datalogging import recordLog
+from LISU.logging import LisuLogger
+
+# Initialize logger
+logger = LisuLogger()
 
 class ActuationConfig:
     def __init__(self, selected_visualisation: str = None):
@@ -78,10 +81,10 @@ class ActuationConfig:
                     default_config["calibration"],
                     default_config["input_devices"]
                 )
-                recordLog("No JSON config found, using minimal default configuration")
+                logger.log_event("config_loaded", {"message": "No JSON config found, using minimal default configuration"})
         except json.JSONDecodeError as e:
             print(f"Invalid JSON in {config_path}: {e}")
-            recordLog(f"Invalid JSON in {config_path}: {e}")
+            logger.log_error(e, {"file": str(config_path), "message": "Invalid JSON in config file"})
             config_data, vis_data, cal_data, input_devs = (
                 default_config["actuation"]["config"],
                 default_config["visualisation"],
@@ -90,7 +93,7 @@ class ActuationConfig:
             )
         except Exception as e:
             print(f"Error loading config: {e}")
-            recordLog(f"Error loading config: {e}")
+            logger.log_error(e, {"message": "Error loading config"})
             config_data, vis_data, cal_data, input_devs = (
                 default_config["actuation"]["config"],
                 default_config["visualisation"],
@@ -117,7 +120,7 @@ class ActuationConfig:
                         return sorted([str(cmd) for cmd in commands])
         except Exception as e:
             print(f"Failed to load actuation commands from JSON: {e}")
-            recordLog(f"Failed to load actuation commands from JSON: {e}")
+            logger.log_error(e, {"message": "Failed to load actuation commands from JSON"})
         return ["addrotation %.3f %.3f %.3f %.3f"]
 
     @property
@@ -132,21 +135,50 @@ class ActuationConfig:
     def input_device_settings(self) -> Dict:
         return self.input_devs
 
+    @property
+    def selected_visualisation_name(self) -> str:
+        """Get the name of the selected visualization."""
+        if not self.selected_visualisation:
+            return "None"
+        return self.selected_visualisation
+
+    @property
+    def udp_ip(self) -> str:
+        """Get the UDP IP address for the selected visualization."""
+        if not self.selected_visualisation:
+            return "127.0.0.1"
+        return self.vis_data["render_options"]["visualisations"][self.selected_visualisation]["udp_ip"]
+
+    @property
+    def udp_port(self) -> int:
+        """Get the UDP port for the selected visualization."""
+        if not self.selected_visualisation:
+            return 7755
+        return self.vis_data["render_options"]["visualisations"][self.selected_visualisation]["udp_port"]
+
 class Actuation:
     def __init__(self, vec_input_controller=None, selected_visualisation: str = None):
         self.config = ActuationConfig(selected_visualisation)
         self.vec_input_controller = vec_input_controller
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.udp_ip = self.config.udp_ip
-        self.udp_port = self.config.udp_port
+        
+        # Get UDP settings from visualization configuration
+        vis_settings = self.config.visualisation_settings["render_options"]["visualisations"][selected_visualisation]
+        self.udp_ip = vis_settings["udp_ip"]
+        self.udp_port = vis_settings["udp_port"]
+        
         self.sock.settimeout(1.0)
-        recordLog(f"Actuation initialized with UDP: {self.udp_ip}:{self.udp_port}")
+        logger.log_event("actuation_initialized", {
+            "udp_ip": self.udp_ip,
+            "udp_port": self.udp_port,
+            "visualisation": selected_visualisation
+        })
 
     def __del__(self):
         self.sock.close()
 
     def process_input(self, vec_input: List[float], dev_name: str, command: str = "addrotation %.3f %.3f %.3f %.3f") -> None:
-        recordLog(f"Processing input for {dev_name}: {vec_input}")
+        logger.info(f"Processing input for {dev_name}: {vec_input}")
         cal = self.config.calibration_settings
         
         dev_config = self.config.input_device_settings.get(dev_name, {})
@@ -156,19 +188,19 @@ class Actuation:
             deadzone = float(cal.get("deadzone", 0.1))
             scale_factor = float(cal.get("scale_factor", 1.0))
             vec_input = self.normalise_value(vec_input, deadzone) * scale_factor
-            recordLog(f"Calibrated input (3+ axes) for {dev_name}: {vec_input}")
+            logger.info(f"Calibrated input (3+ axes) for {dev_name}: {vec_input}")
         else:
             vec_input = np.array(vec_input)
-            recordLog(f"Uncalibrated input (<3 axes) for {dev_name}: {vec_input}")
+            logger.info(f"Uncalibrated input (<3 axes) for {dev_name}: {vec_input}")
 
         if any(v != 0.0 for v in vec_input):
             self._send_command(vec_input, dev_name, command)
         else:
-            recordLog(f"Skipping send for {dev_name}: All values in {vec_input} are zero")
+            logger.info(f"Skipping send for {dev_name}: All values in {vec_input} are zero")
 
     def _send_command(self, vec_input: List[float], dev_name: str, command: str) -> None:
         self.config.count_state += 1
-        recordLog(f"Count state for {dev_name}: {self.config.count_state}")
+        logger.info(f"Count state for {dev_name}: {self.config.count_state}")
         if self.config.count_state >= 2:
             dev_config = self.config.input_device_settings.get(dev_name, {})
             num_axes = len(dev_config.get("axes", ["x"]))
@@ -178,16 +210,16 @@ class Actuation:
                 else:
                     message = command % (vec_input[0], vec_input[1], vec_input[2], self.config.angle)
                 print(f"{dev_name} : {message}")
-                recordLog(f"Preparing to send for {dev_name}: {message}")
+                logger.info(f"Preparing to send for {dev_name}: {message}")
                 self.sock.sendto(message.encode(), (self.udp_ip, self.udp_port))
                 print(f"UDP instruction sent to {self.udp_ip}:{self.udp_port}: {message}")
-                recordLog(f"UDP instruction sent to {self.udp_ip}:{self.udp_port}: {message}")
+                logger.info(f"UDP instruction sent to {self.udp_ip}:{self.udp_port}: {message}")
             except socket.error as e:
                 print(f"Failed to send packet: {e}")
-                recordLog(f"Failed to send packet for {dev_name}: {e}")
+                logger.error(f"Failed to send packet for {dev_name}: {e}")
             except Exception as e:
                 print(f"Unexpected error in send: {e}")
-                recordLog(f"Unexpected error in send for {dev_name}: {e}")
+                logger.error(f"Unexpected error in send for {dev_name}: {e}")
             self.config.count_state = 0
 
     def change_actuation(self, val: int) -> None:
@@ -196,17 +228,17 @@ class Actuation:
             if self.config.fun_array:
                 fun_name = self.config.fun_array[self.config.idx].split(" ")[0]
                 print(f"Button pressed for {fun_name}")
-                recordLog(f"Button pressed for {fun_name}")
+                logger.info(f"Button pressed for {fun_name}")
             else:
                 print("No actuation commands available")
-                recordLog("No actuation commands available")
+                logger.info("No actuation commands available")
 
     def adjust_sensitivity(self, val: int) -> None:
         if val == 1:
             self.config.idx2 += 4 if self.config.idx2 == 1 else 5
             self.config.idx2 = 1 if self.config.idx2 >= 25 else self.config.idx2
             print(f"Sensitivity set to {self.config.idx2}")
-            recordLog(f"Sensitivity set to {self.config.idx2}")
+            logger.info(f"Sensitivity set to {self.config.idx2}")
 
     def normalise_value(self, input_pwm: List[float], deadzone: float = 0.1) -> np.ndarray:
         vec_input = np.array(input_pwm)

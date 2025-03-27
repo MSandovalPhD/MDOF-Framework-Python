@@ -7,16 +7,19 @@ import Actuation
 from LISU.devices import InputDevice
 import pywinusb.hid as hid
 import qprompt
-from typing import List, Tuple, Optional, Dict
+from typing import List, Tuple, Optional, Dict, Any
 import json
 from pathlib import Path
 import threading
 import signal
 import sys
+import msvcrt
 from LISU.logging import LisuLogger
 from LISU.optimisation import OptimisationManager
 import time
 from LISU.transformation import TransformationManager
+from LISU.device_manager import DeviceManager
+from LISU.device_config import configure_new_device
 
 class LisuManager:
     """
@@ -66,15 +69,29 @@ class LisuManager:
         # Set up signal handling
         signal.signal(signal.SIGINT, self.signal_handler)
         
+        # Start keyboard monitoring thread
+        self.keyboard_thread = threading.Thread(target=self._monitor_keyboard, daemon=True)
+        self.keyboard_thread.start()
+        
         self.logger.log_event("initialisation_complete", {
             "visualisation": self.selected_visualisation,
             "config_loaded": bool(self.config)
         })
 
+    def _monitor_keyboard(self):
+        """Monitor keyboard for ESC key press."""
+        while self.running.is_set():
+            if msvcrt.kbhit():
+                key = msvcrt.getch()
+                if key == b'\x1b':  # ESC key
+                    print("\nESC pressed. Stopping...")
+                    self.stop()
+            time.sleep(0.1)
+
     def signal_handler(self, sig, frame):
         """Handle Ctrl+C signal to gracefully stop the application."""
-        self.logger.log_event("shutdown_signal_received", {"signal": "SIGINT"})
-        self.running.clear()
+        print("\nCtrl+C pressed. Stopping...")
+        self.stop()
 
     def _load_config(self, config_path: Path = None) -> Dict:
         """
@@ -174,55 +191,23 @@ class LisuManager:
             return default_config
 
     def select_visualisation(self) -> str:
-        """
-        Dynamically generate visualisation options from the ontology.
-        
-        Returns:
-            str: The selected visualisation name
-        """
+        """Select a visualisation from the available options."""
         options = self.config["visualisation"]["options"]
-        if not options:
-            raise ValueError("No visualisation options defined in configuration.")
+        print("\nAvailable Visualisations:")
+        for i, option in enumerate(options, 1):
+            print(f"{i}. {option}")
         
-        qprompt.clear()
-        print("Available Visualisations:")
-        
-        # Get visualisation types from ontology
-        vis_types = self.config.get("ontology", {}).get("visualisations", {}).get("types", [])
-        
-        # Group visualisations by type
-        grouped_options = {}
-        for option in options:
-            vis_config = self.config["visualisation"]["render_options"]["visualisations"].get(option, {})
-            vis_type = vis_config.get("type", "unknown")
-            if vis_type not in grouped_options:
-                grouped_options[vis_type] = []
-            grouped_options[vis_type].append(option)
-        
-        # Display grouped options
-        for vis_type in vis_types:
-            if vis_type in grouped_options:
-                print(f"\n{vis_type.upper()} Applications:")
-                for i, vis in enumerate(grouped_options[vis_type], 1):
-                    print(f"{i}. {vis}")
-        
-        # Get user selection
-        total_options = len(options)
-        choice = qprompt.ask(f"Select a visualisation (1-{total_options}): ", int, min=1, max=total_options)
-        selected = options[choice - 1]
-        
-        # Update configuration
-        self.config["visualisation"]["selected"] = selected
-        
-        # Get visualisation type and available functions
-        vis_config = self.config["visualisation"]["render_options"]["visualisations"].get(selected, {})
-        vis_type = vis_config.get("type", "unknown")
-        available_functions = self.config.get("ontology", {}).get("visualisations", {}).get("functions", {}).get(vis_type, [])
-        
-        print(f"\nSelected visualisation: {selected} ({vis_type})")
-        print(f"Available functions: {', '.join(available_functions)}")
-        
-        return selected
+        while True:
+            try:
+                choice = qprompt.ask_int("Select a visualisation", min=1, max=len(options))
+                selected = options[choice - 1]
+                print(f"\nSelected visualisation: {selected}")
+                self.logger.log_event("visualisation_selected", {"visualisation": selected})
+                return selected
+            except ValueError:
+                print("Please enter a valid number")
+            except IndexError:
+                print("Please select a number from the list")
 
     def list_devices(self) -> List[Tuple[str, str, str, Dict]]:
         """
@@ -573,113 +558,220 @@ class LisuManager:
             })
 
     def configure_and_run(self):
-        """
-        Configure the LISU framework and run the main loop.
-        
-        This method handles device selection, configuration, and the main execution loop.
-        It also manages the visualisation selection and device monitoring.
-        """
+        """Configure and run the LISU framework."""
         try:
-            # Select and configure device
-            device_info = self.select_device()
-            if not device_info:
-                self.logger.log_warning("No device selected", {"action": "exiting"})
+            # Initialize device manager
+            device_manager = DeviceManager()
+            
+            # Get available devices
+            available_devices = device_manager.get_available_devices()
+            print(f"Detected HID devices: {len(available_devices)} found")
+            for device in available_devices:
+                print(f"HID Device - VID: {device['vid']}, PID: {device['pid']}, Product: {device['name']}")
+            
+            # Get configured devices
+            configured_devices = device_manager.get_configured_devices()
+            print(f"Configured devices from configuration: {configured_devices}")
+            
+            # Find matching devices
+            matching_devices = []
+            for configured in configured_devices:
+                for available in available_devices:
+                    if (available['vid'] == configured['vid'] and 
+                        available['pid'] == configured['pid']):
+                        matching_devices.append((available, configured))
+            
+            if not matching_devices:
+                print("\nNo matches between detected HID devices and configuration.")
+                print("Would you like to configure a new device? (y/n)")
+                choice = input().lower()
+                if choice == 'y':
+                    # Run device configuration with from_main=True
+                    new_device = configure_new_device(device_manager, from_main=True)
+                    if new_device:
+                        # Add the new device to matching devices
+                        matching_devices.append((new_device, new_device))
+                        print(f"\nSuccessfully configured new device: {new_device['name']}")
+                    else:
+                        print("No device was configured.")
+                        return
+                else:
+                    print("No compatible devices found.")
+                    return
+            
+            if not matching_devices:
+                print("No compatible devices found.")
                 return
-                
-            vid, pid, name, dev_config = device_info
-            device = self.configure_device(vid, pid, name, dev_config)
-            if not device:
-                self.logger.log_warning("Failed to configure device", {"action": "exiting"})
-                return
-                
-            # Select visualisation
-            if not self.select_visualisation():
-                self.logger.log_warning("No visualisation selected", {"action": "exiting"})
-                return
-                
-            # Start device monitoring
+            
+            # Select device if multiple matches
+            if len(matching_devices) > 1:
+                print("\nMultiple compatible devices found:")
+                for i, (available, configured) in enumerate(matching_devices, 1):
+                    print(f"{i}. {available['name']} (VID: {available['vid']}, PID: {available['pid']})")
+                while True:
+                    try:
+                        choice = int(input("\nSelect a device (1-{}): ".format(len(matching_devices))))
+                        if 1 <= choice <= len(matching_devices):
+                            selected_device = matching_devices[choice - 1]
+                            break
+                        print("Invalid selection. Please try again.")
+                    except ValueError:
+                        print("Please enter a valid number.")
+            else:
+                selected_device = matching_devices[0]
+            
+            # Configure selected device
+            available_device, configured_device = selected_device
+            print(f"\nConfiguring {available_device['name']}...")
+            
+            # Initialize device
+            device = InputDevice(
+                name=available_device['name'],
+                vid=available_device['vid'],
+                pid=available_device['pid'],
+                device_type=configured_device['type'],
+                library=configured_device['library']
+            )
+            
+            # Set up callbacks
+            device.callback = self._process_event_batch
+            device.button_callback = self._handle_buttons
+            
+            # Configure buttons if needed
+            if configured_device.get('buttons'):
+                print("\nConfigure buttons? (y/n) [n]: ", end='')
+                if input().lower() == 'y':
+                    self._configure_buttons(device, configured_device['buttons'])
+            
+            # Start monitoring
             device.start_monitoring()
             
             # Main loop
-            while self.running.is_set():
-                try:
-                    # Process any pending events
-                    batch = self.optimisation_manager.batcher.add({
-                        "type": "tick",
-                        "timestamp": time.time()
-                    })
-                    
-                    if batch:
-                        self.optimisation_manager.monitor.measure(
-                            "event_processing_time",
-                            lambda: self._process_event_batch(batch)
-                        )
-                    
-                    # Process any pending commands
-                    if self.selected_visualisation:
-                        self.optimisation_manager.monitor.measure(
-                            "command_send_time",
-                            lambda: self.selected_visualisation.process_commands()
-                        )
-                        
-                    # Sleep briefly to prevent CPU overuse
-                    time.sleep(0.01)
-                    
-                except KeyboardInterrupt:
-                    self.logger.log_event("shutdown_signal_received", {"signal": "SIGINT"})
-                    self.running.clear()
-                    break
-                except Exception as e:
-                    self.logger.log_error(e, {
-                        "device": self.dev_name,
-                        "state": None,
-                        "config": None
-                    })
-                    time.sleep(1)  # Prevent rapid error loops
-                    
+            print("\nLISU Framework is running. Press ESC to exit...")
+            while True:
+                if msvcrt.kbhit():
+                    key = msvcrt.getch()
+                    if key == b'\x1b':  # ESC key
+                        print("\nESC pressed. Stopping...")
+                        break
+                time.sleep(0.1)
+            
             # Cleanup
+            print("Stopping framework...")
             device.stop_monitoring()
             device.close()
+            if hasattr(self, 'actuation'):
+                self.actuation.sock.close()
+            print("Cleanup complete. Exiting...")
             
         except Exception as e:
-            self.logger.log_error(e, {
-                "device": None,
-                "state": None,
-                "config": None
-            })
-        finally:
-            self.running.clear()
+            self.logger.log_error(e, {"context": "configure_and_run"})
+            print(f"Error in configure_and_run: {e}")
 
     def _process_event_batch(self, batch: List[Dict[str, Any]]):
         """Process a batch of events."""
         for event in batch:
-            self.optimisation_manager.monitor.metrics.events_processed += 1
-            # Process event as needed
+            try:
+                # Get device state
+                device_state = event.get("state", {})
+                if not device_state:
+                    continue
+
+                # Get device name and config
+                device_name = event.get("device")
+                if not device_name:
+                    continue
+
+                device_config = self.config.get("input_devices", {}).get(device_name, {})
+                if not device_config:
+                    continue
+
+                # Process axis values
+                for axis in ["x", "y", "z"]:
+                    if axis in device_state:
+                        value = device_state[axis]
+                        # Apply transformations
+                        transformed_value = self.transformation_manager.transform_axis(
+                            device_name, axis, value
+                        )
+                        # Apply speed factor
+                        transformed_value *= self.speed_factor
+                        
+                        # Send command with proper format for Drishti
+                        if self.selected_visualisation == "Drishti-v2.6.4":
+                            command = f"addrotation {transformed_value:.3f} 0.0 0.0 0.0"
+                            try:
+                                self.actuation.sock.sendto(command.encode(), (self.actuation.udp_ip, self.actuation.udp_port))
+                                print(f"UDP Command sent: {command}")
+                            except Exception as e:
+                                print(f"Error sending UDP command: {e}")
+
+                # Process button states
+                if "buttons" in device_state:
+                    button_states = device_state["buttons"]
+                    for i, state in enumerate(button_states):
+                        if state and i in self.button_mappings:
+                            mapping = self.button_mappings[i]
+                            if mapping["action"] == "increase_speed":
+                                self.speed_factor *= 1.1
+                                print(f"Speed increased to: {self.speed_factor:.2f}")
+                            elif mapping["action"] == "decrease_speed":
+                                self.speed_factor *= 0.9
+                                print(f"Speed decreased to: {self.speed_factor:.2f}")
+
+            except Exception as e:
+                self.logger.log_error(e, {
+                    "device": device_name,
+                    "state": device_state,
+                    "config": device_config
+                })
 
     def stop(self):
         """
         Stop the LISU framework and clean up resources.
         """
+        print("Stopping framework...")
         self.running.clear()
-        if hasattr(self, 'selected_visualisation') and self.selected_visualisation:
-            self.selected_visualisation.close()
+        
+        # Close UDP socket
+        if hasattr(self, 'actuation') and self.actuation:
+            try:
+                self.actuation.sock.close()
+            except Exception as e:
+                print(f"Error closing UDP socket: {e}")
+        
+        # Clean up resources
+        self.cleanup()
+        
+        print("Framework stopped.")
+        sys.exit(0)  # Force exit the program
+
+    def cleanup(self):
+        """Clean up resources and log final metrics."""
+        try:
+            # Log final metrics
+            self.logger.log_event("framework_shutting_down", {
+                **self.logger.get_metrics(),
+                **self.optimisation_manager.monitor.get_metrics()
+            })
+            
+            # Clean up components
+            self.transformation_manager.clear_history()
+            self.optimisation_manager.cleanup()
+            self.logger.cleanup()
+            
+            # Clear any remaining events
+            self.running.clear()
+            
+        except Exception as e:
+            print(f"Error during cleanup: {e}")
+            sys.exit(1)  # Exit with error code if cleanup fails
 
     def __del__(self):
         """
         Destructor to ensure proper cleanup of resources.
         """
         self.stop()
-
-    def cleanup(self):
-        """Clean up resources and log final metrics."""
-        self.logger.log_event("framework_shutting_down", {
-            **self.logger.get_metrics(),
-            **self.optimisation_manager.monitor.get_metrics()
-        })
-        self.transformation_manager.clear_history()
-        self.optimisation_manager.cleanup()
-        self.stop()
-        self.logger.cleanup()
 
 if __name__ == "__main__":
     lisu = LisuManager()

@@ -108,14 +108,24 @@ class InputDevice:
         return states
 
     def _load_specs(self) -> Dict:
-        axes = self.dev_config.get("axes", ["x"])
-        buttons = self.dev_config.get("buttons", [])
+        """Load device specifications with proper mouse data format."""
+        axes = self.dev_config.get("axes", ["x", "y"])
+        buttons = self.dev_config.get("buttons", ["left_click", "right_click"])
         dev_type = self.dev_config.get("type", "unknown")
+        
+        # Mouse-specific specs
         specs = {
-            "axes": {axis: {"channel": -1, "byte1": -1, "byte2": -1, "scale": 127} for axis in axes},
-            "buttons": [{"channel": -1, "byte": idx, "bit": 0} for idx in range(len(buttons))],
+            "axes": {
+                "x": {"channel": 0, "byte1": 1, "byte2": -1, "scale": 127},
+                "y": {"channel": 1, "byte1": 2, "byte2": -1, "scale": 127}
+            },
+            "buttons": [
+                {"channel": 0, "byte": 0, "bit": 0},  # Left click
+                {"channel": 1, "byte": 0, "bit": 1}   # Right click
+            ],
             "type": dev_type
         }
+        
         logger.log_event("device_specs_loaded", {
             "name": self.name,
             "specs": specs
@@ -163,106 +173,66 @@ class InputDevice:
 
     def process(self, data: List[int]) -> None:
         """Process incoming device data with validation."""
+        # Debug logging for raw data
+        print(f"Raw data received: {data}")
+        
         # Validate data length
         if not isinstance(data, list) or not data:
-            logger.log_event("device_invalid_data", {
-                "name": self.name,
-                "error": "Invalid or empty data received"
-            })
+            print("Invalid or empty data received")
             return
         
         if len(data) > self.MAX_DATA_LENGTH:
             data = data[:self.MAX_DATA_LENGTH]
-            logger.log_event("device_data_truncated", {
-                "name": self.name,
-                "original_length": len(data),
-                "truncated_length": self.MAX_DATA_LENGTH
-            })
+            print(f"Data truncated to {self.MAX_DATA_LENGTH} bytes")
 
-        # Log raw data with validation
-        logger.log_event("device_raw_data", {
-            "name": self.name,
-            "data_length": len(data),
-            "timestamp": self.state["t"]
-        })
+        # Process mouse data
+        try:
+            # HID Mouse data format:
+            # [report_id, buttons, x, y, wheel, ...]
+            if len(data) >= 4:
+                # Skip report ID (first byte)
+                report_id = data[0]
+                
+                # Process buttons (second byte)
+                button_states = [
+                    bool(data[1] & 0x01),  # Left click
+                    bool(data[1] & 0x02)   # Right click
+                ]
+                validated_states = self._validate_button_states(button_states)
+                
+                if validated_states != self.state["buttons"]:
+                    changed_buttons = [i for i, (old, new) in enumerate(zip(self.state["buttons"], validated_states)) if old != new]
+                    print(f"Button states changed: {changed_buttons}")
+                    self.state["buttons"] = validated_states
+                    if self.button_callback:
+                        self.button_callback(self.state["buttons"])
 
-        max_len = len(data)
-        if max_len > 1:
-            try:
-                # Process x-axis
-                x_raw = data[1] if data[1] <= 127 else data[1] - 256
+                # Process X axis (third byte)
+                x_raw = data[2] if data[2] <= 127 else data[2] - 256
                 self.state["x"] = self._validate_axis_value(x_raw, "x")
                 if abs(self.state["x"]) >= self.AXIS_DEADZONE:
-                    logger.log_event("device_axis_update", {
-                        "name": self.name,
-                        "axis": "x",
-                        "raw_value": x_raw,
-                        "normalized_value": self.state["x"]
-                    })
+                    print(f"X axis value: {self.state['x']:.3f}")
 
-                # Process y-axis
-                if max_len > 2:
-                    y_raw = data[2] if data[2] <= 127 else data[2] - 256
-                    self.state["y"] = self._validate_axis_value(y_raw, "y")
-                    if abs(self.state["y"]) >= self.AXIS_DEADZONE:
-                        logger.log_event("device_axis_update", {
-                            "name": self.name,
-                            "axis": "y",
-                            "raw_value": y_raw,
-                            "normalized_value": self.state["y"]
-                        })
+                # Process Y axis (fourth byte)
+                y_raw = data[3] if data[3] <= 127 else data[3] - 256
+                self.state["y"] = self._validate_axis_value(y_raw, "y")
+                if abs(self.state["y"]) >= self.AXIS_DEADZONE:
+                    print(f"Y axis value: {self.state['y']:.3f}")
 
-                # Process z-axis
-                if max_len > 3:
-                    z_raw = data[3] if data[3] <= 127 else data[3] - 256
-                    self.state["z"] = self._validate_axis_value(z_raw, "z")
-                    if abs(self.state["z"]) >= self.AXIS_DEADZONE:
-                        logger.log_event("device_axis_update", {
-                            "name": self.name,
-                            "axis": "z",
-                            "raw_value": z_raw,
-                            "normalized_value": self.state["z"]
-                        })
+                # Update timestamp
+                self.state["t"] = high_acc_clock()
 
-                # Process buttons
-                if max_len > 0:
-                    try:
-                        button_states = [(data[0] & (1 << i)) != 0 for i in range(8)]
-                        validated_states = self._validate_button_states(button_states)
-                        
-                        if validated_states != self.state["buttons"]:
-                            changed_buttons = [i for i, (old, new) in enumerate(zip(self.state["buttons"], validated_states)) if old != new]
-                            logger.log_event("device_button_update", {
-                                "name": self.name,
-                                "old_states": self.state["buttons"],
-                                "new_states": validated_states,
-                                "changed_buttons": changed_buttons
-                            })
-                            self.state["buttons"] = validated_states
-                            if self.button_callback:
-                                self.button_callback(self.state["buttons"])
-                    except Exception as e:
-                        logger.log_event("device_button_error", {
-                            "name": self.name,
-                            "error": str(e)
-                        })
+                # Call the callback if set
+                if self.callback:
+                    self.callback(self.state)
 
-            except Exception as e:
-                logger.log_event("device_processing_error", {
-                    "name": self.name,
-                    "error": str(e),
-                    "data": data
-                })
-                return
-
-        self.state["t"] = high_acc_clock()
-        logger.log_event("device_state_updated", {
-            "name": self.name,
-            "state": self._filter_sensitive_data(self.state),
-            "timestamp": self.state["t"]
-        })
-        if self.callback:
-            self.callback(self.state)
+        except Exception as e:
+            print(f"Error processing mouse data: {e}")
+            logger.log_error(e, {
+                "device": self.name,
+                "raw_data": data,
+                "state": self.state
+            })
 
     def set_callback(self, callback: Callable) -> None:
         """Set the callback function for state updates with validation."""
@@ -285,6 +255,47 @@ class InputDevice:
             "name": self.name,
             "callback_type": callback.__name__ if hasattr(callback, '__name__') else "unknown"
         })
+
+    def start_monitoring(self) -> None:
+        """
+        Start monitoring the device for input events.
+        This method opens the device and sets up the data handler.
+        """
+        try:
+            self.open()
+            logger.log_event("device_monitoring_started", {
+                "name": self.name,
+                "status": "success"
+            })
+        except Exception as e:
+            logger.log_event("device_monitoring_failed", {
+                "name": self.name,
+                "error": str(e),
+                "status": "error"
+            })
+            raise
+
+    def stop_monitoring(self) -> None:
+        """
+        Stop monitoring the device for input events.
+        This method closes the device and cleans up resources.
+        """
+        try:
+            if self.device:
+                # Remove the data handler before closing
+                self.device.set_raw_data_handler(None)
+                self.close()
+                logger.log_event("device_monitoring_stopped", {
+                    "name": self.name,
+                    "status": "success"
+                })
+        except Exception as e:
+            logger.log_event("device_monitoring_stop_failed", {
+                "name": self.name,
+                "error": str(e),
+                "status": "error"
+            })
+            raise
 
 def to_int16(y1: int, y2: int) -> int:
     x = (y1) | (y2 << 8)
