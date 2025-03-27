@@ -10,15 +10,56 @@ class ActuationConfig:
         config_path = Path(__file__).parent / "data" / "visualisation_config.json"
         default_config = {
             "visualisation": {
-                "options": [], "selected": None,
-                "render_options": {"resolution": "1920x1080"}
+                "options": ["Drishti-v2.6.4", "ParaView", "Unity_VR_Game"],
+                "selected": None,
+                "render_options": {
+                    "resolution": "1920x1080",
+                    "visualisations": {
+                        "Drishti-v2.6.4": {"udp_ip": "127.0.0.1", "udp_port": 7755, "command": "addrotation %.3f %.3f %.3f %.3f"},
+                        "ParaView": {"udp_ip": "192.168.1.100", "udp_port": 7766, "command": "rotate %.3f %.3f %.3f"},
+                        "Unity_VR_Game": {"udp_ip": "127.0.0.1", "udp_port": 12345, "command": "move %.3f %.3f %.3f"}
+                    }
+                }
             },
             "actuation": {
                 "config": {"x": 0.0, "y": 0.0, "z": 0.0, "angle": 20.0, "speed": 120.0, "fps": 20, "idx": 0, "idx2": 1, "count_state": 0},
-                "commands": {"default": "addrotation %.3f %.3f %.3f %.3f"}
+                "commands": {
+                    "default": "addrotation %.3f %.3f %.3f %.3f",
+                    "mouse": "addrotation %.3f %.3f %.3f %.3f",
+                    "unity_movement": "move %.3f %.3f %.3f",
+                    "unity_rotation": "rotate %.3f %.3f %.3f",
+                    "unity_brake": "BRAKE",
+                    "unity_release": "RELEASE"
+                }
             },
-            "calibration": {"deadzone": 0.1, "scale_factor": 1.0, "axis_mapping": {"x": "mouse_x", "y": "none", "z": "none"}},
-            "input_devices": {}
+            "calibration": {
+                "default": {"deadzone": 0.1, "scale_factor": 1.0},
+                "devices": {
+                    "Bluetooth_mouse": {
+                        "deadzone": 0.1,
+                        "scale_factor": 1.0,
+                        "axis_mapping": {
+                            "x": "unity_rotation",
+                            "y": "unity_movement"
+                        },
+                        "button_mapping": {
+                            "left_click": "unity_brake",
+                            "right_click": "unity_release"
+                        }
+                    }
+                }
+            },
+            "input_devices": {
+                "Bluetooth_mouse": {
+                    "vid": "046d",
+                    "pid": "b03a",
+                    "type": "mouse",
+                    "library": "pywinusb",
+                    "axes": ["x", "y"],
+                    "buttons": ["left_click", "right_click"],
+                    "command": "mouse"
+                }
+            }
         }
         self.fun_array = self._load_instructions()
 
@@ -48,8 +89,8 @@ class ActuationConfig:
                 default_config["input_devices"]
             )
         except Exception as e:
-            print(f"Failed to load configuration from {config_path}: {e}")
-            recordLog(f"Failed to load configuration from {config_path}: {e}")
+            print(f"Error loading config: {e}")
+            recordLog(f"Error loading config: {e}")
             config_data, vis_data, cal_data, input_devs = (
                 default_config["actuation"]["config"],
                 default_config["visualisation"],
@@ -57,22 +98,11 @@ class ActuationConfig:
                 default_config["input_devices"]
             )
 
-        self.x = float(config_data.get("x", 0.0))
-        self.y = float(config_data.get("y", 0.0))
-        self.z = float(config_data.get("z", 0.0))
-        self.angle = float(config_data.get("angle", 20.0))
-        self.speed = float(config_data.get("speed", 120.0))
-        self.fps = int(config_data.get("fps", 20))
-        self.idx = int(config_data.get("idx", 0))
-        self.idx2 = int(config_data.get("idx2", 1))
-        self.count_state = int(config_data.get("count_state", 0))
-
-        self.visualisation = vis_data
-        self.calibration = cal_data
-        self.input_devices = input_devs
-        vis_settings = self.visualisation["render_options"].get("visualisations", {}).get(selected_visualisation or "default", {})
-        self.udp_ip = vis_settings.get("udp_ip", "127.0.0.1")
-        self.udp_port = vis_settings.get("udp_port", 7755)
+        self.config_data = config_data
+        self.vis_data = vis_data
+        self.cal_data = cal_data
+        self.input_devs = input_devs
+        self.selected_visualisation = selected_visualisation or vis_data.get("selected")
 
     def _load_instructions(self) -> List[str]:
         config_path = Path(__file__).parent / "data" / "visualisation_config.json"
@@ -92,15 +122,15 @@ class ActuationConfig:
 
     @property
     def visualisation_settings(self) -> Dict:
-        return self.visualisation
+        return self.vis_data
 
     @property
     def calibration_settings(self) -> Dict:
-        return self.calibration
+        return self.cal_data
 
     @property
     def input_device_settings(self) -> Dict:
-        return self.input_devices
+        return self.input_devs
 
 class Actuation:
     def __init__(self, vec_input_controller=None, selected_visualisation: str = None):

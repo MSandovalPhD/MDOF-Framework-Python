@@ -1,30 +1,195 @@
 {
+  "ontology": {
+    "input_devices": {
+      "types": ["mouse", "gamepad", "vr_controller"],
+      "properties": ["vid", "pid", "type", "library", "axes", "buttons"],
+      "mappings": {
+        "mouse": {
+          "axes": ["x", "y"],
+          "buttons": ["left_click", "right_click"],
+          "functions": ["movement", "rotation", "selection"]
+        },
+        "gamepad": {
+          "axes": ["x", "y", "z"],
+          "buttons": ["btn1", "btn2", "btn3", "btn4"],
+          "functions": ["movement", "rotation", "action", "menu"]
+        }
+      }
+    },
+    "visualisations": {
+      "types": ["3d_viewer", "vr_application"],
+      "properties": ["name", "type", "udp_ip", "udp_port"],
+      "functions": {
+        "3d_viewer": ["rotate", "pan", "zoom"],
+        "vr_application": ["move", "rotate", "interact"]
+      }
+    }
+  },
   "visualisation": {
-    "options": ["Drishti-v2.6.4", "ParaView"],
+    "options": ["Drishti-v2.6.4", "ParaView", "Unity_VR_Game"],
     "selected": null,
     "render_options": {
       "resolution": "1920x1080",
       "visualisations": {
-        "Drishti-v2.6.4": {"udp_ip": "127.0.0.1", "udp_port": 7755, "command": "addrotation %.3f %.3f %.3f %.3f"},
-        "ParaView": {"udp_ip": "192.168.1.100", "udp_port": 7766, "command": "rotate %.3f %.3f %.3f"}
+        "Drishti-v2.6.4": {
+          "type": "3d_viewer",
+          "udp_ip": "127.0.0.1",
+          "udp_port": 7755,
+          "command": "addrotation %.3f %.3f %.3f %.3f"
+        },
+        "ParaView": {
+          "type": "3d_viewer",
+          "udp_ip": "192.168.1.100",
+          "udp_port": 7766,
+          "command": "rotate %.3f %.3f %.3f"
+        },
+        "Unity_VR_Game": {
+          "type": "vr_application",
+          "udp_ip": "127.0.0.1",
+          "udp_port": 12345,
+          "command": "move %.3f %.3f %.3f"
+        }
       }
     }
   },
   "actuation": {
-    "config": {"x": 0.0, "y": 0.0, "z": 0.0, "angle": 20.0},
+    "config": {"x": 0.0, "y": 0.0, "z": 0.0},
     "commands": {
       "default": "addrotation %.3f %.3f %.3f %.3f",
-      "mouse": "addrotation %.3f %.3f %.3f %.3f"
+      "mouse": "addrotation %.3f %.3f %.3f %.3f",
+      "unity_movement": "move %.3f %.3f %.3f",
+      "unity_rotation": "rotate %.3f %.3f %.3f",
+      "unity_brake": "BRAKE",
+      "unity_release": "RELEASE"
     }
   },
   "calibration": {
     "default": {"deadzone": 0.1, "scale_factor": 1.0},
     "devices": {
-      "Bluetooth_mouse": {"deadzone": 0.1, "scale_factor": 1.0, "axis_mapping": {"x": "mouse_x", "y": "none", "z": "none"}}
+      "Bluetooth_mouse": {
+        "deadzone": 0.1,
+        "scale_factor": 1.0,
+        "axis_mapping": {
+          "x": "unity_rotation",
+          "y": "unity_movement"
+        },
+        "button_mapping": {
+          "left_click": "unity_brake",
+          "right_click": "unity_release"
+        }
+      }
     }
   },
   "input_devices": {
-    "Bluetooth_mouse": {"vid": "046d", "pid": "b03a", "type": "mouse", "library": "pywinusb", "axes": ["x"], "buttons": ["left_click", "right_click"], "command": "mouse"},
-    "PS4_Controller": {"vid": "054c", "pid": "09cc", "type": "gamepad", "library": "pywinusb", "axes": ["x", "y", "z"], "buttons": ["btn1", "btn2"], "command": "default"}
+    "Bluetooth_mouse": {
+      "vid": "046d",
+      "pid": "b03a",
+      "type": "mouse",
+      "library": "pywinusb",
+      "axes": ["x", "y"],
+      "buttons": ["left_click", "right_click"],
+      "command": "mouse"
+    }
+  },
+  "transformations": {
+    "linear": {
+      "direct": {
+        "description": "Direct linear mapping with optional deadzone",
+        "parameters": {
+          "deadzone": 0.1,
+          "scale_factor": 1.0
+        }
+      },
+      "scaled": {
+        "description": "Scaled linear mapping with input/output range",
+        "parameters": {
+          "input_min": -1.0,
+          "input_max": 1.0,
+          "output_min": -1.0,
+          "output_max": 1.0
+        }
+      },
+      "normalised": {
+        "description": "Normalised linear mapping with deadzone",
+        "parameters": {
+          "deadzone": 0.1
+        }
+      }
+    },
+    "non_linear": {
+      "exponential": {
+        "description": "Exponential response curve",
+        "parameters": {
+          "base": 2.71828,
+          "factor": 2.0,
+          "deadzone": 0.1
+        }
+      },
+      "smoothed": {
+        "description": "Smoothed input with weighted history",
+        "parameters": {
+          "window_size": 5
+        }
+      },
+      "threshold": {
+        "description": "Threshold-based binary output",
+        "parameters": {
+          "threshold": 0.5,
+          "high_value": 1.0,
+          "low_value": 0.0
+        }
+      },
+      "adaptive": {
+        "description": "Velocity-based adaptive sensitivity",
+        "parameters": {
+          "sensitivity": 1.0
+        }
+      }
+    }
+  },
+  "device_mappings": {
+    "mouse": {
+      "x": {
+        "transform": {
+          "type": "linear.direct",
+          "config": {
+            "deadzone": 0.05,
+            "scale_factor": 1.0
+          }
+        },
+        "output": "position.x"
+      },
+      "y": {
+        "transform": {
+          "type": "non_linear.smoothed",
+          "config": {
+            "window_size": 3
+          }
+        },
+        "output": "position.y"
+      }
+    },
+    "vr_controller": {
+      "trigger": {
+        "transform": {
+          "type": "non_linear.threshold",
+          "config": {
+            "threshold": 0.7,
+            "high_value": 1.0,
+            "low_value": 0.0
+          }
+        },
+        "output": "action.grab"
+      },
+      "joystick": {
+        "transform": {
+          "type": "non_linear.adaptive",
+          "config": {
+            "sensitivity": 1.2
+          }
+        },
+        "output": "movement.direction"
+      }
+    }
   }
 }
