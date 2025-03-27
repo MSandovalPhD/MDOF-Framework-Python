@@ -1,6 +1,7 @@
-from typing import Dict, List, Tuple, Optional, Callable
+from typing import Dict, List, Any, Optional, Callable
 import pywinusb.hid as hid
-from timeit import default_timer as high_acc_clock
+import pygame
+import time
 from LISU.logging import LisuLogger
 import numpy as np
 
@@ -16,24 +17,199 @@ class InputDevice:
     MAX_BUTTON_COUNT = 8
     MAX_DATA_LENGTH = 64
 
-    def __init__(self, vid: int, pid: int, name: str, dev_config: Optional[Dict] = None):
+    def __init__(self, name: str, vid: int, pid: int, device_type: str,
+                 library: str = "pywinusb", axes: List[str] = None,
+                 buttons: List[str] = None, command: str = "unknown",
+                 logger: Optional[LisuLogger] = None):
+        """
+        Initialize an input device.
+        
+        Args:
+            name: Name of the device
+            vid: Vendor ID
+            pid: Product ID
+            device_type: Type of device (e.g., "mouse", "keyboard", "gamepad")
+            library: Library to use (pywinusb or pygame)
+            axes: List of available axes
+            buttons: List of available buttons
+            command: Default command type
+            logger: Optional logger instance
+        """
+        self.name = name
         self.vid = vid
         self.pid = pid
-        self.name = name
-        self.dev_config = dev_config or {}
-        self.specs = self._load_specs()
+        self.device_type = device_type
+        self.library = library
+        self.axes = axes or []
+        self.buttons = buttons or []
+        self.command = command
+        self.logger = logger or LisuLogger()
+        self.device = None
+        self.running = False
+        self.callback = None
+        self.button_callback = None
         self.state = {
-            "t": -1.0, "x": 0.0, "y": 0.0, "z": 0.0, "roll": 0.0, "pitch": 0.0, "yaw": 0.0,
-            "buttons": [0] * len(self.specs.get("buttons", []))
+            "axes": {axis: 0.0 for axis in self.axes},
+            "buttons": {button: False for button in self.buttons}
         }
-        self.device: Optional[hid.HidDevice] = None
-        self.callback: Optional[Callable] = None
-        self.button_callback: Optional[Callable] = None
-        self.last_button_update = 0.0
-        self.last_axis_values = {axis: 0.0 for axis in ["x", "y", "z"]}
         
-        # Validate and log initialization
-        self._validate_and_log_init()
+        # Initialize libraries if needed
+        if self.library == "pygame":
+            pygame.init()
+            pygame.joystick.init()
+    
+    def start_monitoring(self):
+        """Start monitoring the device."""
+        try:
+            if self.library == "pywinusb":
+                self._start_pywinusb_monitoring()
+            elif self.library == "pygame":
+                self._start_pygame_monitoring()
+            else:
+                raise ValueError(f"Unsupported library: {self.library}")
+        except Exception as e:
+            self.logger.log_error(e, {"context": "Starting device monitoring"})
+            raise
+    
+    def _start_pywinusb_monitoring(self):
+        """Start monitoring using pywinusb."""
+        try:
+            # Create a filter for the device
+            device_filter = hid.HidDeviceFilter(vendor_id=self.vid, product_id=self.pid)
+            devices = device_filter.get_devices()
+            
+            if not devices:
+                raise ValueError(f"No HID device found with VID: {self.vid:04x}, PID: {self.pid:04x}")
+            
+            # Get the first matching device
+            self.device = devices[0]
+            
+            # Open the device
+            self.device.open()
+            
+            # Set up data handler
+            def data_handler(data):
+                if self.callback:
+                    self.callback(self._process_data(data))
+            
+            # Set the raw data handler
+            self.device.set_raw_data_handler(data_handler)
+            self.running = True
+            
+            self.logger.log_event("device_started", {
+                "device": self.name,
+                "type": self.device_type,
+                "library": self.library,
+                "vid": f"{self.vid:04x}",
+                "pid": f"{self.pid:04x}"
+            })
+            
+        except Exception as e:
+            self.logger.log_error(e, {"context": "Starting pywinusb monitoring"})
+            if self.device:
+                try:
+                    self.device.close()
+                except:
+                    pass
+            raise
+    
+    def _start_pygame_monitoring(self):
+        """Start monitoring using pygame."""
+        try:
+            # Find the matching joystick
+            for i in range(pygame.joystick.get_count()):
+                joystick = pygame.joystick.Joystick(i)
+                joystick.init()
+                # Store the joystick instance
+                self.device = joystick
+                break
+            
+            if not self.device:
+                raise ValueError("No pygame joystick found")
+            
+            self.running = True
+            self._pygame_monitor_loop()
+            
+            self.logger.log_event("device_started", {
+                "device": self.name,
+                "type": self.device_type,
+                "library": self.library
+            })
+        except Exception as e:
+            self.logger.log_error(e, {"context": "Starting pygame monitoring"})
+            raise
+    
+    def _pygame_monitor_loop(self):
+        """Main monitoring loop for pygame devices."""
+        while self.running:
+            for event in pygame.event.get():
+                if event.type == pygame.JOYAXISMOTION:
+                    # Handle axis movement
+                    if self.callback:
+                        axis_name = self.axes[event.axis] if event.axis < len(self.axes) else f"axis_{event.axis}"
+                        self.state["axes"][axis_name] = event.value
+                        self.callback(self.state)
+                
+                elif event.type == pygame.JOYBUTTONDOWN:
+                    # Handle button press
+                    if self.button_callback:
+                        button_name = self.buttons[event.button] if event.button < len(self.buttons) else f"button_{event.button}"
+                        self.state["buttons"][button_name] = True
+                        self.button_callback(button_name, True)
+                
+                elif event.type == pygame.JOYBUTTONUP:
+                    # Handle button release
+                    if self.button_callback:
+                        button_name = self.buttons[event.button] if event.button < len(self.buttons) else f"button_{event.button}"
+                        self.state["buttons"][button_name] = False
+                        self.button_callback(button_name, False)
+            
+            time.sleep(0.01)  # Small delay to prevent CPU overuse
+    
+    def stop_monitoring(self):
+        """Stop monitoring the device."""
+        try:
+            self.running = False
+            if self.device:
+                if self.library == "pywinusb":
+                    try:
+                        self.device.close()
+                    except:
+                        pass
+                elif self.library == "pygame":
+                    try:
+                        self.device.quit()
+                    except:
+                        pass
+            
+            self.logger.log_event("device_stopped", {
+                "device": self.name,
+                "type": self.device_type
+            })
+        except Exception as e:
+            self.logger.log_error(e, {"context": "Stopping device monitoring"})
+            raise
+    
+    def _process_data(self, data: List[int]) -> Dict[str, Any]:
+        """Process raw HID data into a standardized format."""
+        try:
+            # Basic data validation
+            if not data or len(data) < 4:
+                return self.state
+            
+            # Process mouse data (assuming standard HID mouse format)
+            if self.device_type == "mouse":
+                # data[0] is report ID, data[1] is button state, data[2] is X, data[3] is Y
+                self.state["buttons"]["left_click"] = bool(data[1] & 0x01)
+                self.state["buttons"]["right_click"] = bool(data[1] & 0x02)
+                self.state["axes"]["x"] = data[2]
+                self.state["axes"]["y"] = data[3]
+            
+            return self.state
+            
+        except Exception as e:
+            self.logger.log_error(e, {"context": "Processing device data"})
+            return self.state
 
     def _validate_and_log_init(self):
         """Validate initialization parameters and log the event."""
@@ -43,14 +219,14 @@ class InputDevice:
             raise ValueError("Device name must be a non-empty string")
         
         # Filter sensitive information from config
-        safe_config = self._filter_sensitive_data(self.dev_config)
+        safe_config = self._filter_sensitive_data(self.state)
         
-        logger.log_event("device_initialized", {
+        self.logger.log_event("device_initialized", {
             "name": self.name,
             "vid": f"{self.vid:04x}",
             "pid": f"{self.pid:04x}",
             "config": safe_config,
-            "specs": self._filter_sensitive_data(self.specs)
+            "specs": self._filter_sensitive_data(self.state)
         })
 
     def _filter_sensitive_data(self, data: Dict) -> Dict:
@@ -78,10 +254,10 @@ class InputDevice:
         normalized = min(max(value / 127.0, self.MIN_AXIS_VALUE), self.MAX_AXIS_VALUE)
         
         # Check if change exceeds deadzone
-        if abs(normalized - self.last_axis_values[axis]) < self.AXIS_DEADZONE:
-            return self.last_axis_values[axis]
+        if abs(normalized - self.state["axes"][axis]) < self.AXIS_DEADZONE:
+            return self.state["axes"][axis]
         
-        self.last_axis_values[axis] = normalized
+        self.state["axes"][axis] = normalized
         return normalized
 
     def _validate_button_states(self, states: List[bool]) -> List[bool]:
@@ -100,7 +276,7 @@ class InputDevice:
             return self.state["buttons"]
         
         # Apply debounce
-        current_time = high_acc_clock()
+        current_time = time.time()
         if current_time - self.last_button_update < self.BUTTON_DEBOUNCE_TIME:
             return self.state["buttons"]
         
@@ -109,24 +285,16 @@ class InputDevice:
 
     def _load_specs(self) -> Dict:
         """Load device specifications with proper mouse data format."""
-        axes = self.dev_config.get("axes", ["x", "y"])
-        buttons = self.dev_config.get("buttons", ["left_click", "right_click"])
-        dev_type = self.dev_config.get("type", "unknown")
+        dev_type = self.command
         
         # Mouse-specific specs
         specs = {
-            "axes": {
-                "x": {"channel": 0, "byte1": 1, "byte2": -1, "scale": 127},
-                "y": {"channel": 1, "byte1": 2, "byte2": -1, "scale": 127}
-            },
-            "buttons": [
-                {"channel": 0, "byte": 0, "bit": 0},  # Left click
-                {"channel": 1, "byte": 0, "bit": 1}   # Right click
-            ],
+            "axes": {axis: {"channel": i, "byte1": i+1, "byte2": -1, "scale": 127} for i, axis in enumerate(self.axes)},
+            "buttons": {button: {"channel": i, "byte": 0, "bit": i} for i, button in enumerate(self.buttons)},
             "type": dev_type
         }
         
-        logger.log_event("device_specs_loaded", {
+        self.logger.log_event("device_specs_loaded", {
             "name": self.name,
             "specs": specs
         })
@@ -138,14 +306,14 @@ class InputDevice:
                 self.device = hid.HidDeviceFilter(vendor_id=self.vid, product_id=self.pid).get_devices()[0]
                 self.device.open()
                 self.device.set_raw_data_handler(self.process)
-                logger.log_event("device_opened", {
+                self.logger.log_event("device_opened", {
                     "name": self.name,
                     "vid": f"{self.vid:04x}",
                     "pid": f"{self.pid:04x}",
                     "status": "success"
                 })
             except Exception as e:
-                logger.log_event("device_open_failed", {
+                self.logger.log_event("device_open_failed", {
                     "name": self.name,
                     "vid": f"{self.vid:04x}",
                     "pid": f"{self.pid:04x}",
@@ -159,12 +327,12 @@ class InputDevice:
             try:
                 self.device.close()
                 self.device = None
-                logger.log_event("device_closed", {
+                self.logger.log_event("device_closed", {
                     "name": self.name,
                     "status": "success"
                 })
             except Exception as e:
-                logger.log_event("device_close_failed", {
+                self.logger.log_event("device_close_failed", {
                     "name": self.name,
                     "error": str(e),
                     "status": "error"
@@ -209,18 +377,18 @@ class InputDevice:
 
                 # Process X axis (third byte)
                 x_raw = data[2] if data[2] <= 127 else data[2] - 256
-                self.state["x"] = self._validate_axis_value(x_raw, "x")
-                if abs(self.state["x"]) >= self.AXIS_DEADZONE:
-                    print(f"X axis value: {self.state['x']:.3f}")
+                self.state["axes"]["x"] = self._validate_axis_value(x_raw, "x")
+                if abs(self.state["axes"]["x"]) >= self.AXIS_DEADZONE:
+                    print(f"X axis value: {self.state['axes']['x']:.3f}")
 
                 # Process Y axis (fourth byte)
                 y_raw = data[3] if data[3] <= 127 else data[3] - 256
-                self.state["y"] = self._validate_axis_value(y_raw, "y")
-                if abs(self.state["y"]) >= self.AXIS_DEADZONE:
-                    print(f"Y axis value: {self.state['y']:.3f}")
+                self.state["axes"]["y"] = self._validate_axis_value(y_raw, "y")
+                if abs(self.state["axes"]["y"]) >= self.AXIS_DEADZONE:
+                    print(f"Y axis value: {self.state['axes']['y']:.3f}")
 
                 # Update timestamp
-                self.state["t"] = high_acc_clock()
+                self.state["t"] = time.time()
 
                 # Call the callback if set
                 if self.callback:
@@ -228,7 +396,7 @@ class InputDevice:
 
         except Exception as e:
             print(f"Error processing mouse data: {e}")
-            logger.log_error(e, {
+            self.logger.log_error(e, {
                 "device": self.name,
                 "raw_data": data,
                 "state": self.state
@@ -240,7 +408,7 @@ class InputDevice:
             raise ValueError("Callback must be callable")
         
         self.callback = callback
-        logger.log_event("device_callback_set", {
+        self.logger.log_event("device_callback_set", {
             "name": self.name,
             "callback_type": callback.__name__ if hasattr(callback, '__name__') else "unknown"
         })
@@ -251,51 +419,10 @@ class InputDevice:
             raise ValueError("Button callback must be callable")
         
         self.button_callback = callback
-        logger.log_event("device_button_callback_set", {
+        self.logger.log_event("device_button_callback_set", {
             "name": self.name,
             "callback_type": callback.__name__ if hasattr(callback, '__name__') else "unknown"
         })
-
-    def start_monitoring(self) -> None:
-        """
-        Start monitoring the device for input events.
-        This method opens the device and sets up the data handler.
-        """
-        try:
-            self.open()
-            logger.log_event("device_monitoring_started", {
-                "name": self.name,
-                "status": "success"
-            })
-        except Exception as e:
-            logger.log_event("device_monitoring_failed", {
-                "name": self.name,
-                "error": str(e),
-                "status": "error"
-            })
-            raise
-
-    def stop_monitoring(self) -> None:
-        """
-        Stop monitoring the device for input events.
-        This method closes the device and cleans up resources.
-        """
-        try:
-            if self.device:
-                # Remove the data handler before closing
-                self.device.set_raw_data_handler(None)
-                self.close()
-                logger.log_event("device_monitoring_stopped", {
-                    "name": self.name,
-                    "status": "success"
-                })
-        except Exception as e:
-            logger.log_event("device_monitoring_stop_failed", {
-                "name": self.name,
-                "error": str(e),
-                "status": "error"
-            })
-            raise
 
 def to_int16(y1: int, y2: int) -> int:
     x = (y1) | (y2 << 8)
