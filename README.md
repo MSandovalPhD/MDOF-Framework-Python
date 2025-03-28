@@ -50,7 +50,7 @@ LISU (Layered Interaction System for User-Modes) is a framework developed to man
    ```python
    from LisuHandler import LisuManager
    lisu = LisuManager()
-   lisu.start_gamepad(0x054c, 0x09cc)  # Example for PS4 controller (VID/PID)
+   lisu.configure_and_run()  # This will guide you through device selection and configuration
    ```
 
 ### Expected Output
