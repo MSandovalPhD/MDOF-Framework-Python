@@ -1,7 +1,7 @@
 {
   "ontology": {
     "input_devices": {
-      "types": ["mouse", "gamepad", "vr_controller"],
+      "types": ["mouse", "gamepad", "vr_controller", "3d_input"],
       "properties": ["vid", "pid", "type", "library", "axes", "buttons"],
       "mappings": {
         "mouse": {
@@ -13,6 +13,11 @@
           "axes": ["x", "y", "z"],
           "buttons": ["btn1", "btn2", "btn3", "btn4"],
           "functions": ["movement", "rotation", "action", "menu"]
+        },
+        "3d_input": {
+          "axes": ["x", "y", "z", "roll"],
+          "buttons": ["btn1", "btn2", "btn3", "btn4"],
+          "functions": ["movement", "rotation", "action"]
         }
       }
     },
@@ -77,6 +82,16 @@
           "left_click": "unity_brake",
           "right_click": "unity_release"
         }
+      },
+      "Wing_2.0": {
+        "deadzone": 0.2,
+        "scale_factor": 1.0,
+        "axis_mapping": {
+          "x": "addrotation",
+          "y": "addrotation",
+          "z": "addrotation",
+          "roll": "addrotation"
+        }
       }
     }
   },
@@ -89,6 +104,15 @@
       "axes": ["x", "y"],
       "buttons": ["left_click", "right_click"],
       "command": "mouse"
+    },
+    "Wing_2.0": {
+      "vid": "10c4",
+      "pid": "81b9",
+      "type": "3d_input",
+      "library": "pygame",
+      "axes": ["x", "y", "z", "roll"],
+      "buttons": ["btn1", "btn2", "btn3", "btn4"],
+      "command": "addrotation"
     }
   },
   "transformations": {

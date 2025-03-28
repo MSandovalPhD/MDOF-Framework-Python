@@ -234,53 +234,78 @@ class LisuManager:
             except IndexError:
                 print("Please select a number from the list")
 
-    def list_devices(self) -> List[Tuple[str, str, str, Dict]]:
+    def detect_devices(self) -> List[Dict]:
         """
-        List all available HID devices and match them with configured devices.
+        Detect available input devices using configured libraries.
         
         Returns:
-            List of tuples containing (vid, pid, name, config) for matched devices
+            List of dictionaries containing device information
         """
-        all_hids = hid.find_all_hid_devices()
-        print(f"Detected HID devices: {len(all_hids)} found")
-        for device in all_hids:
-            vid = f"{device.vendor_id:04x}".lower()
-            pid = f"{device.product_id:04x}".lower()
-            print(f"HID Device - VID: {vid}, PID: {pid}, Product: {device.product_name}")
-
-        input_devices = self.config["input_devices"]
-        print(f"Configured devices from configuration: {input_devices}")
-        available_devices = []
-        for device in all_hids:
-            vid = f"{device.vendor_id:04x}".lower()
-            pid = f"{device.product_id:04x}".lower()
-            for name, config in input_devices.items():
-                if config.get("vid") == vid and config.get("pid") == pid:
-                    print(f"Match found: {name} (VID: {vid}, PID: {pid})")
-                    available_devices.append((vid, pid, name, config))
-        if not available_devices:
-            print("No matches between detected HID devices and configuration.")
-        return available_devices
-
-    def select_device(self) -> Optional[Tuple[str, str, str, Dict]]:
-        """
-        Allow user to select an input device from available devices.
+        devices = []
         
-        Returns:
-            Tuple of (vid, pid, name, config) for selected device, or None if no device selected
-        """
-        devices = self.list_devices()
-        if not devices:
-            print("No compatible devices found.")
-            self.logger.log_warning("No compatible devices found.")
-            return None
-
-        qprompt.clear()
-        print("Available Devices:")
-        for i, (vid, pid, name, config) in enumerate(devices, 1):
-            print(f"{i}. {name} (VID: {vid}, PID: {pid}, Type: {config.get('type', 'unknown')})")
-        choice = qprompt.ask(f"Select a device (1-{len(devices)}) ", int, min=1, max=len(devices))
-        return devices[choice - 1]
+        try:
+            # Get configured devices from ontology
+            configured_devices = self.config.get("input_devices", {})
+            
+            # Detect HID devices
+            if self.config.get("use_pywinusb", True):
+                try:
+                    hid_devices = hid.find_all_hid_devices()
+                    
+                    for device in hid_devices:
+                        # Convert VID/PID to hex strings for comparison
+                        vid_hex = f"{device.vendor_id:04x}"
+                        pid_hex = f"{device.product_id:04x}"
+                        
+                        # Look for matching device in ontology
+                        for dev_name, dev_config in configured_devices.items():
+                            if (dev_config.get("vid", "").lower() == vid_hex and 
+                                dev_config.get("pid", "").lower() == pid_hex and
+                                dev_config.get("library") == "pywinusb"):
+                                devices.append({
+                                    "name": dev_name,
+                                    "vid": vid_hex,
+                                    "pid": pid_hex,
+                                    "type": dev_config.get("type", "unknown"),
+                                    "library": "pywinusb",
+                                    "product": device.product_name
+                                })
+                                break
+                except ImportError:
+                    print("pywinusb not available")
+            
+            # Detect pygame devices
+            if self.config.get("use_pygame", True):
+                try:
+                    pygame.init()
+                    pygame.joystick.init()
+                    
+                    for i in range(pygame.joystick.get_count()):
+                        joystick = pygame.joystick.Joystick(i)
+                        joystick.init()
+                        
+                        # Get device name and try to match with ontology
+                        device_name = joystick.get_name()
+                        for dev_name, dev_config in configured_devices.items():
+                            if (dev_config.get("library") == "pygame" and
+                                dev_config.get("type") == "3d_input"):  # For now, assume all pygame devices are 3D input
+                                devices.append({
+                                    "name": dev_name,
+                                    "type": "3d_input",
+                                    "library": "pygame",
+                                    "product": device_name,
+                                    "device_index": i
+                                })
+                                break
+                except ImportError:
+                    print("pygame not available")
+            
+            return devices
+            
+        except Exception as e:
+            print(f"Error detecting devices: {e}")
+            self.logger.log_error(e)
+            return []
 
     def configure_buttons(self, dev_config: Dict) -> Dict:
         """
@@ -356,6 +381,49 @@ class LisuManager:
                 vid_int = 0
                 pid_int = 0
             
+            # Get available functions based on device type
+            device_type = dev_config.get("type", "")
+            if device_type == "gamepad":
+                available_functions = [
+                    "Movement Control (X, Y, Z axes)",
+                    "Speed Control (Roll axis)",
+                    "Button Actions (increase/decrease speed)"
+                ]
+            elif device_type == "mouse":
+                available_functions = [
+                    "Movement Control (X, Y axes)",
+                    "Button Actions (unity_brake/release)"
+                ]
+            else:
+                available_functions = ["Movement Control"]
+            
+            # Let user select functions
+            print("\nAvailable functions for this device:")
+            for i, func in enumerate(available_functions, 1):
+                print(f"{i}. {func}")
+            
+            selected_functions = []
+            while True:
+                try:
+                    choice = input("\nEnter function number to select (or 'done' to finish, 'back' to go back): ")
+                    if choice.lower() == 'done':
+                        break
+                    elif choice.lower() == 'back':
+                        return None
+                    
+                    func_index = int(choice) - 1
+                    if 0 <= func_index < len(available_functions):
+                        selected_functions.append(available_functions[func_index])
+                        print(f"Selected: {available_functions[func_index]}")
+                    else:
+                        print("Invalid selection. Please try again.")
+                except ValueError:
+                    print("Please enter a valid number or 'done'/'back'")
+            
+            if not selected_functions:
+                print("No functions selected. Going back...")
+                return None
+            
             device = InputDevice(
                 name=name,
                 vid=vid_int,
@@ -366,7 +434,7 @@ class LisuManager:
                 buttons=dev_config["buttons"],
                 command=dev_config["command"],
                 logger=self.logger,
-                device_index=device_index  # Pass the device index
+                device_index=device_index
             )
             
             # Apply calibration settings
@@ -389,7 +457,8 @@ class LisuManager:
             print(f"Configured {name} successfully")
             self.logger.log_event("device_configured", {
                 "device": self.dev_name,
-                "config": dev_config
+                "config": dev_config,
+                "selected_functions": selected_functions
             })
             return device
         except Exception as e:
@@ -410,43 +479,64 @@ class LisuManager:
             device_type = dev_config["type"]
             device_name = dev_config.get("name", "")
             
-            # Get device-specific calibration
+            # Get device-specific calibration and mappings
             cal = self.config["calibration"]["devices"].get(device_name, self.config["calibration"]["default"])
-            deadzone = float(cal.get("deadzone", 0.2))  # Default deadzone of 0.2
-            scale_factor = float(cal.get("scale_factor", 1.0))
             
-            # Process each axis
+            # Get visualization-specific command format
+            vis_config = self.config["visualisation"]["render_options"]["visualisations"].get(self.selected_visualisation, {})
+            command_format = vis_config.get("command", self.config["actuation"]["commands"]["default"])
+            
+            # Process each axis using ontology mappings
             has_movement = False
             x_value = 0.0
             y_value = 0.0
             z_value = 0.0
-            angle_value = 1.0  # Fixed angle value
+            angle_value = 1.0  # Default minimum angle
             
-            # Process x, y, z axes first
-            if "axis_0" in state:
-                value = state["axis_0"]
-                if abs(value) >= 0.2:  # Fixed deadzone
-                    x_value = value
-                    has_movement = True
-                    print(f"X axis value: {value:.3f}")
-                    
-            if "axis_1" in state:
-                value = state["axis_1"]
-                if abs(value) >= 0.2:  # Fixed deadzone
-                    y_value = value
-                    has_movement = True
-                    print(f"Y axis value: {value:.3f}")
-                    
-            if "axis_2" in state:
-                value = state["axis_2"]
-                if abs(value) >= 0.2:  # Fixed deadzone
-                    z_value = value
-                    has_movement = True
-                    print(f"Z axis value: {value:.3f}")
+            # Process axes based on device type
+            if device_type == "gamepad":
+                # Map axes according to calibration
+                axis_mapping = cal.get("axis_mapping", {})
+                
+                # Process X axis (axis_0)
+                if "axis_0" in state:
+                    value = state["axis_0"]
+                    if abs(value) >= deadzone:
+                        x_value = value * scale_factor
+                        has_movement = True
+                
+                # Process Y axis (axis_1)
+                if "axis_1" in state:
+                    value = state["axis_1"]
+                    if abs(value) >= deadzone:
+                        y_value = value * scale_factor
+                        has_movement = True
+                
+                # Process Z axis (axis_2)
+                if "axis_2" in state:
+                    value = state["axis_2"]
+                    if abs(value) >= deadzone:
+                        z_value = value * scale_factor
+                        has_movement = True
+                
+                # Process Roll axis (axis_3)
+                if "axis_3" in state:
+                    value = state["axis_3"]
+                    if abs(value) >= deadzone:
+                        # Map roll to angle range (1.0 to 10.0)
+                        angle_value = 1.0 + (abs(value) * 9.0)
             
-            # Only send UDP command if there's actual movement above deadzone
+            # Only send UDP command if there's actual movement in X, Y, or Z axes
             if has_movement:
-                command = f"addrotation {x_value:.3f} {y_value:.3f} {z_value:.3f} {angle_value:.3f}"
+                # Format command based on visualization type
+                if self.selected_visualisation == "Drishti-v2.6.4":
+                    command = f"addrotation {x_value:.3f} {y_value:.3f} {z_value:.3f} {angle_value:.3f}"
+                elif self.selected_visualisation == "ParaView":
+                    command = f"rotate {x_value:.3f} {y_value:.3f} {z_value:.3f}"
+                elif self.selected_visualisation == "Unity_VR_Game":
+                    command = f"move {x_value:.3f} {y_value:.3f} {z_value:.3f}"
+                else:
+                    command = command_format % (x_value, y_value, z_value, angle_value)
                 
                 # Send command via UDP
                 try:
@@ -486,48 +576,65 @@ class LisuManager:
             if not changed_keys:
                 return  # Skip processing if no changes
                 
-            mouse_mappings = self.config["device_mappings"].get("mouse", {})
+            device_name = dev_config.get("name", "")
+            device_type = dev_config.get("type", "")
             
-            for axis, axis_mapping in mouse_mappings.items():
-                if axis not in changed_keys:
-                    continue
-                    
-                # Get transformation configuration
-                transform = axis_mapping["transform"]
-                transform_type = transform["type"]
-                transform_config = transform["config"]
-                
-                # Try to get cached transformation
-                cache_key = f"mouse_{axis}_{state[axis]}"
-                transformed_value = self.optimisation_manager.cache.get(cache_key)
-                
-                if transformed_value is None:
-                    # Apply transformation if not cached
-                    transformed_value = self.optimisation_manager.monitor.measure(
-                        "transformation_time",
-                        lambda: self.transformation_manager.transform_input(
-                            state[axis], transform_type, transform_config
-                        )
-                    )
-                    self.optimisation_manager.cache.set(cache_key, transformed_value)
-                    self.optimisation_manager.monitor.metrics.cache_misses += 1
+            # Get device-specific calibration and mappings
+            cal = self.config["calibration"]["devices"].get(device_name, self.config["calibration"]["default"])
+            device_mappings = self.config["device_mappings"].get(device_type, {})
+            
+            # Get visualization-specific command format
+            vis_config = self.config["visualisation"]["render_options"]["visualisations"].get(self.selected_visualisation, {})
+            command_format = vis_config.get("command", self.config["actuation"]["commands"]["default"])
+            
+            # Process each axis using ontology mappings
+            has_movement = False
+            x_value = 0.0
+            y_value = 0.0
+            z_value = 0.0
+            angle_value = 1.0  # Default minimum angle
+            
+            # Process X axis
+            if "x" in state:
+                value = state["x"]
+                if abs(value) >= deadzone:
+                    x_value = value * scale_factor
+                    has_movement = True
+            
+            # Process Y axis
+            if "y" in state:
+                value = state["y"]
+                if abs(value) >= deadzone:
+                    y_value = value * scale_factor
+                    has_movement = True
+            
+            # Only send UDP command if there's actual movement
+            if has_movement:
+                # Format command based on visualization type
+                if self.selected_visualisation == "Drishti-v2.6.4":
+                    command = f"addrotation {x_value:.3f} {y_value:.3f} {z_value:.3f} {angle_value:.3f}"
+                elif self.selected_visualisation == "ParaView":
+                    command = f"rotate {x_value:.3f} {y_value:.3f} {z_value:.3f}"
+                elif self.selected_visualisation == "Unity_VR_Game":
+                    command = f"move {x_value:.3f} {y_value:.3f} {z_value:.3f}"
                 else:
-                    self.optimisation_manager.monitor.metrics.cache_hits += 1
+                    command = command_format % (x_value, y_value, z_value, angle_value)
                 
-                # Log transformation
-                self.logger.log_transformation(
-                    self.dev_name,
-                    state[axis],
-                    transformed_value,
-                    transform_type,
-                    transform_config
-                )
-                
-                # Send transformed value to output
-                if transformed_value != 0.0:  # Only send non-zero values
-                    self._send_command(axis_mapping["output"], transformed_value)
+                # Send command via UDP
+                try:
+                    if hasattr(self, 'actuation') and self.actuation:
+                        self.actuation.sock.sendto(command.encode(), (self.actuation.udp_ip, self.actuation.udp_port))
+                        print(f"UDP Command sent: {command}")
+                except Exception as e:
+                    print(f"Error sending UDP command: {e}")
+                    self.logger.log_error(e, {
+                        "device": self.dev_name,
+                        "command": command,
+                        "values": {"x": x_value, "y": y_value, "z": z_value, "angle": angle_value}
+                    })
                     
         except Exception as e:
+            print(f"Error in _process_mouse_state: {e}")
             self.logger.log_error(e, {
                 "device": self.dev_name,
                 "state": state,
@@ -536,7 +643,7 @@ class LisuManager:
             
     def _handle_buttons(self, state: Dict, buttons: Dict, dev_config: Dict) -> None:
         """
-        Handle button presses and map them to actions.
+        Handle button presses and map them to actions using ontology mappings.
         
         Args:
             state: Current device state
@@ -544,24 +651,58 @@ class LisuManager:
             dev_config: Device configuration
         """
         try:
+            # If no button mappings are configured, return early
+            if not self.button_mappings:
+                return
+                
+            device_name = dev_config.get("name", "")
+            device_type = dev_config.get("type", "")
+            
+            # Get device-specific calibration and mappings
+            cal = self.config["calibration"]["devices"].get(device_name, self.config["calibration"]["default"])
+            button_mapping = cal.get("button_mapping", {})
+            
             # Check each button in our mappings
-            for button, action in self.button_mappings.items():
+            for button, action in button_mapping.items():
                 if button in state and state[button]:
                     print(f"Button {button} pressed, executing action: {action}")
+                    
+                    # Handle different action types
                     if action == "increase_speed":
-                        # Increase the rotation speed by 1.0
+                        # Get current speed from roll axis
                         if "axis_3" in state:
-                            current_speed = 1.0 + (abs(state["axis_3"]) * 9.0)  # Get current speed
-                            new_speed = min(10.0, current_speed + 1.0)  # Cap at 10.0
-                            state["axis_3"] = (new_speed - 1.0) / 9.0  # Convert back to -1 to 1 range
+                            current_speed = 1.0 + (abs(state["axis_3"]) * 9.0)
+                            new_speed = min(10.0, current_speed + 1.0)
+                            state["axis_3"] = (new_speed - 1.0) / 9.0
                             print(f"Rotation speed increased to: {new_speed:.1f}")
+                            
                     elif action == "decrease_speed":
-                        # Decrease the rotation speed by 1.0
+                        # Get current speed from roll axis
                         if "axis_3" in state:
-                            current_speed = 1.0 + (abs(state["axis_3"]) * 9.0)  # Get current speed
-                            new_speed = max(1.0, current_speed - 1.0)  # Minimum 1.0
-                            state["axis_3"] = (new_speed - 1.0) / 9.0  # Convert back to -1 to 1 range
+                            current_speed = 1.0 + (abs(state["axis_3"]) * 9.0)
+                            new_speed = max(1.0, current_speed - 1.0)
+                            state["axis_3"] = (new_speed - 1.0) / 9.0
                             print(f"Rotation speed decreased to: {new_speed:.1f}")
+                            
+                    elif action == "unity_brake":
+                        # Send brake command to Unity
+                        if self.selected_visualisation == "Unity_VR_Game":
+                            command = "BRAKE"
+                            try:
+                                self.actuation.sock.sendto(command.encode(), (self.actuation.udp_ip, self.actuation.udp_port))
+                                print("UDP Command sent: BRAKE")
+                            except Exception as e:
+                                print(f"Error sending brake command: {e}")
+                                
+                    elif action == "unity_release":
+                        # Send release command to Unity
+                        if self.selected_visualisation == "Unity_VR_Game":
+                            command = "RELEASE"
+                            try:
+                                self.actuation.sock.sendto(command.encode(), (self.actuation.udp_ip, self.actuation.udp_port))
+                                print("UDP Command sent: RELEASE")
+                            except Exception as e:
+                                print(f"Error sending release command: {e}")
                     
                     # Log the button action
                     self.logger.log_event("button_action", {
@@ -581,21 +722,42 @@ class LisuManager:
             
     def _send_command(self, command: str, value: float) -> None:
         """
-        Send command to the current visualisation.
+        Send command to the current visualisation using ontology command formats.
         
         Args:
             command: Command to send
             value: Value associated with the command
         """
         try:
-            if self.selected_visualisation:
-                self.actuation.process_input([value, 0.0, 0.0], self.dev_name, command)
+            if not self.selected_visualisation:
+                return
+                
+            # Get visualization-specific command format
+            vis_config = self.config["visualisation"]["render_options"]["visualisations"].get(self.selected_visualisation, {})
+            command_format = vis_config.get("command", self.config["actuation"]["commands"]["default"])
+            
+            # Format command based on visualization type
+            if self.selected_visualisation == "Drishti-v2.6.4":
+                formatted_command = f"addrotation {value:.3f} 0.0 0.0 1.0"
+            elif self.selected_visualisation == "ParaView":
+                formatted_command = f"rotate {value:.3f} 0.0 0.0"
+            elif self.selected_visualisation == "Unity_VR_Game":
+                formatted_command = f"move {value:.3f} 0.0 0.0"
+            else:
+                formatted_command = command_format % (value, 0.0, 0.0, 1.0)
+            
+            # Send command via UDP
+            if hasattr(self, 'actuation') and self.actuation:
+                self.actuation.sock.sendto(formatted_command.encode(), (self.actuation.udp_ip, self.actuation.udp_port))
+                print(f"UDP Command sent: {formatted_command}")
+                
         except Exception as e:
             print(f"Error sending command: {e}")
             self.logger.log_error(e, {
                 "device": self.dev_name,
                 "command": command,
-                "value": value
+                "value": value,
+                "visualisation": self.selected_visualisation
             })
 
     def configure_and_run(self):
@@ -607,25 +769,36 @@ class LisuManager:
                 print(f"\nInitialized actuation system for {self.selected_visualisation}")
                 print(f"UDP IP: {self.actuation.udp_ip}, Port: {self.actuation.udp_port}")
             
-            # Get available devices using HID and pygame
+            # Get available devices from ontology
             qprompt.clear()
-            print("\nDetecting input devices...")
+            print("\nAvailable devices from configuration:")
             
-            # Get HID devices using pywinusb
-            hid_devices = hid.find_all_hid_devices()
-            print(f"\nHID devices found: {len(hid_devices)}")
-            for i, device in enumerate(hid_devices, 1):
-                print(f"{i}. HID Device - VID: {device.vendor_id:04x}, PID: {device.product_id:04x}, Product: {device.product_name}")
+            # Get configured devices from ontology
+            configured_devices = self.config.get("input_devices", {})
             
-            # Get gamepad devices using pygame
-            pygame.init()
-            pygame.joystick.init()
-            joystick_count = pygame.joystick.get_count()
-            print(f"\nGamepad devices found: {joystick_count}")
-            for i in range(joystick_count):
-                joystick = pygame.joystick.Joystick(i)
-                joystick.init()
-                print(f"{i + len(hid_devices) + 1}. Gamepad - {joystick.get_name()}")
+            # List configured devices with their functions
+            for i, (dev_name, dev_config) in enumerate(configured_devices.items(), 1):
+                device_type = dev_config.get('type', 'unknown')
+                library = dev_config.get('library', 'unknown')
+                axes = dev_config.get('axes', [])
+                buttons = dev_config.get('buttons', [])
+                
+                print(f"{i}. {dev_name}")
+                print(f"   Type: {device_type}")
+                print(f"   Library: {library}")
+                print(f"   Axes: {', '.join(axes)}")
+                print(f"   Buttons: {', '.join(buttons)}")
+                
+                # Print available functions based on device type
+                if device_type == "gamepad":
+                    print("   Available Functions:")
+                    print("   - Movement: X, Y, Z axes control rotation")
+                    print("   - Speed Control: Roll axis (axis_3) controls rotation speed (1.0-10.0)")
+                    print("   - Button Actions: increase_speed, decrease_speed")
+                elif device_type == "mouse":
+                    print("   Available Functions:")
+                    print("   - Movement: X, Y axes control rotation")
+                    print("   - Button Actions: unity_brake, unity_release")
             
             # Let user select a device
             try:
@@ -634,133 +807,98 @@ class LisuManager:
                     print("No device selected.")
                     return
                 
-                total_devices = len(hid_devices) + joystick_count
-                if not 1 <= selection <= total_devices:
+                if not 1 <= selection <= len(configured_devices):
                     print("Invalid selection.")
                     return
                 
-                # Determine which library to use based on selection
-                if selection <= len(hid_devices):
-                    # HID device selected
-                    selected_device = hid_devices[selection - 1]
-                    library = "pywinusb"
-                    
-                    # Determine device type based on product name
-                    product_name = selected_device.product_name.lower()
-                    if "mouse" in product_name or "trackball" in product_name:
-                        device_type = "mouse"
-                        axes = ["x", "y"]
-                        buttons = ["left_click", "right_click"]
-                    elif "keyboard" in product_name:
-                        device_type = "keyboard"
-                        axes = []
-                        buttons = ["space", "enter", "esc"]
-                    elif "gamepad" in product_name or "joystick" in product_name:
-                        device_type = "gamepad"
-                        axes = ["x", "y", "z", "roll"]
-                        buttons = [f"button_{i}" for i in range(8)]
-                    else:
-                        device_type = "unknown"
-                        axes = ["x", "y"]
-                        buttons = ["button_1", "button_2"]
-                    
-                    # Create device configuration
-                    device_config = {
-                        "vid": f"{selected_device.vendor_id:04x}",
-                        "pid": f"{selected_device.product_id:04x}",
-                        "type": device_type,
-                        "library": library,
-                        "axes": axes,
-                        "buttons": buttons,
-                        "command": device_type
-                    }
-                    
-                    # Configure the device
-                    device = self.configure_device(
-                        device_config["vid"],
-                        device_config["pid"],
-                        selected_device.product_name,
-                        device_config
-                    )
-                else:
-                    # Gamepad device selected
-                    joystick_index = selection - len(hid_devices) - 1
-                    joystick = pygame.joystick.Joystick(joystick_index)
-                    joystick.init()
-                    library = "pygame"
-                    device_type = "gamepad"
-                    
-                    # Get the number of axes and buttons
-                    num_axes = joystick.get_numaxes()
-                    num_buttons = joystick.get_numbuttons()
-                    
-                    # Create appropriate axes and buttons lists
-                    axes = [f"axis_{i}" for i in range(num_axes)]
-                    buttons = [f"button_{i}" for i in range(num_buttons)]
-                    
-                    # Create device configuration
-                    device_config = {
-                        "vid": "0000",  # pygame doesn't provide VID/PID
-                        "pid": "0000",
-                        "type": device_type,
-                        "library": library,
-                        "axes": axes,
-                        "buttons": buttons,
-                        "command": "gamepad"
-                    }
-                    
+                # Get selected device configuration
+                device_name = list(configured_devices.keys())[selection - 1]
+                device_config = configured_devices[device_name]
+                
+                # Configure the device based on its library
+                if device_config["library"] == "pygame":
                     try:
+                        pygame.init()
+                        pygame.joystick.init()
+                        joystick_count = pygame.joystick.get_count()
+                        
+                        if joystick_count == 0:
+                            print("No gamepad devices found.")
+                            return
+                        
+                        # Use the first available joystick
+                        joystick = pygame.joystick.Joystick(0)
+                        joystick.init()
+                        
                         # Configure the device
                         device = self.configure_device(
                             device_config["vid"],
                             device_config["pid"],
-                            joystick.get_name(),
+                            device_name,
                             device_config,
-                            device_index=joystick_index  # Pass the joystick index
+                            device_index=0
                         )
+                    except ImportError:
+                        print("pygame not available")
+                        return
+                else:  # pywinusb
+                    try:
+                        # Find matching HID device
+                        hid_devices = hid.find_all_hid_devices()
+                        matching_device = None
                         
-                        if not device:
-                            print("Failed to configure device.")
+                        for hid_device in hid_devices:
+                            vid_hex = f"{hid_device.vendor_id:04x}"
+                            pid_hex = f"{hid_device.product_id:04x}"
+                            
+                            if (device_config.get("vid", "").lower() == vid_hex and 
+                                device_config.get("pid", "").lower() == pid_hex):
+                                matching_device = hid_device
+                                break
+                        
+                        if not matching_device:
+                            print("Matching HID device not found.")
                             return
                         
-                        print(f"\nSelected device:")
-                        print(f"  Name: {device.name}")
-                        print(f"  Type: {device.device_type}")
-                        print(f"  Library: {device.library}")
-                        
-                        # Set up device callbacks
-                        device.callback = lambda state: self._process_state(state, 0.1, 1.0, device_config)
-                        device.button_callback = lambda state, buttons: self._handle_buttons(state, buttons, device_config)
-                        
-                        # Start monitoring
-                        device.start_monitoring()
-                        
-                        print("\nDevice monitoring started. Press ESC to exit.")
-                        print("Moving the joystick should send UDP commands to the visualization.")
-                        
-                        # Keep the program running until ESC is pressed
-                        while True:
-                            if msvcrt.kbhit():
-                                key = msvcrt.getch()
-                                if key == b'\x1b':  # ESC key
-                                    print("\nESC pressed. Stopping...")
-                                    device.stop_monitoring()
-                                    if library == "pygame":
-                                        pygame.quit()
-                                    break
-                            time.sleep(0.1)
-                            
-                    except Exception as e:
-                        print(f"Error configuring device: {e}")
-                        if 'device' in locals() and device:
-                            try:
-                                device.stop_monitoring()
-                            except:
-                                pass
-                        if library == "pygame":
-                            pygame.quit()
+                        # Configure the device
+                        device = self.configure_device(
+                            f"{matching_device.vendor_id:04x}",
+                            f"{matching_device.product_id:04x}",
+                            device_name,
+                            device_config
+                        )
+                    except ImportError:
+                        print("pygame not available")
                         return
                 
+                if not device:
+                    print("Failed to configure device.")
+                    return
+                
+                print(f"\nSelected device:")
+                print(f"  Name: {device.name}")
+                print(f"  Type: {device.device_type}")
+                print(f"  Library: {device.library}")
+                
+                # Start monitoring
+                device.start_monitoring()
+                
+                print("\nDevice monitoring started. Press ESC to exit.")
+                print("Moving the joystick should send UDP commands to the visualization.")
+                
+                # Keep the program running until ESC is pressed
+                while True:
+                    if msvcrt.kbhit():
+                        key = msvcrt.getch()
+                        if key == b'\x1b':  # ESC key
+                            print("\nESC pressed. Stopping...")
+                            if hasattr(device, 'stop_monitoring'):
+                                device.stop_monitoring()
+                            if device.library == "pygame":
+                                pygame.quit()
+                            break
+                    time.sleep(0.1)
+                    
             except ValueError:
                 print("Please enter a valid number.")
                 return
@@ -770,7 +908,7 @@ class LisuManager:
             self.logger.log_error(e, {"context": "configure_and_run"})
         finally:
             # Clean up
-            if 'device' in locals():
+            if 'device' in locals() and hasattr(device, 'stop_monitoring'):
                 device.stop_monitoring()
             if 'pygame' in locals():
                 pygame.quit()
@@ -882,6 +1020,45 @@ class LisuManager:
         except Exception as e:
             print(f"Error during cleanup: {e}")
             # Don't re-raise the exception in __del__
+
+    def select_device(self) -> Optional[Dict]:
+        """
+        Allow user to select an input device from available devices.
+        
+        Returns:
+            Dictionary containing device information, or None if no device selected
+        """
+        devices = self.detect_devices()
+        if not devices:
+            print("No compatible devices found.")
+            self.logger.log_warning("No compatible devices found.")
+            return None
+
+        qprompt.clear()
+        print("\nDetecting input devices...\n")
+        
+        # Group devices by type
+        hid_devices = [d for d in devices if d["library"] == "pywinusb"]
+        gamepad_devices = [d for d in devices if d["library"] == "pygame"]
+        
+        # Print HID devices
+        if hid_devices:
+            print("HID devices found:", len(hid_devices))
+            for i, device in enumerate(hid_devices, 1):
+                print(f"{i}. HID Device - VID: {device['vid']}, PID: {device['pid']}, Product: {device['product']}")
+        
+        # Print gamepad devices
+        if gamepad_devices:
+            print("\nGamepad devices found:", len(gamepad_devices))
+            for i, device in enumerate(gamepad_devices, len(hid_devices) + 1):
+                print(f"{i}. Gamepad - {device['product']}")
+        
+        # Get user selection
+        choice = qprompt.ask("\nEnter the number of the device you want to use (or 0 to exit): ", int, min=0, max=len(devices))
+        if choice == 0:
+            return None
+            
+        return devices[choice - 1]
 
 if __name__ == "__main__":
     lisu = LisuManager()
