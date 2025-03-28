@@ -56,6 +56,7 @@ class InputDevice:
             "axes": {axis: 0.0 for axis in self.axes},
             "buttons": {button: False for button in self.buttons}
         }
+        self._last_state = {}  # Initialize _last_state for state comparison
         
         # Initialize libraries if needed
         if self.library == "pygame":
@@ -120,54 +121,47 @@ class InputDevice:
     def _start_pygame_monitoring(self):
         """Start monitoring pygame joystick events."""
         try:
-            # Initialize pygame joystick
-            pygame.init()
-            pygame.joystick.init()
+            if not pygame.get_init():
+                pygame.init()
+            if not pygame.joystick.get_init():
+                pygame.joystick.init()
             
-            # Get the joystick
-            joystick = pygame.joystick.Joystick(self.device_index)
-            joystick.init()
-            
-            print(f"Initialized pygame joystick: {joystick.get_name()}")
-            
-            # Main monitoring loop
-            while self.running.is_set():
-                # Process pygame events
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        self.running.clear()
-                        break
+            # Initialize the joystick
+            if self.device_index is not None:
+                joystick = pygame.joystick.Joystick(self.device_index)
+                joystick.init()
+                print(f"Initialized pygame joystick: {joystick.get_name()}")
                 
-                # Get current state
-                state = {}
-                
-                # Get axis values
-                for i in range(joystick.get_numaxes()):
-                    axis_value = joystick.get_axis(i)
-                    state[f"axis_{i}"] = axis_value
-                
-                # Get button states
-                for i in range(joystick.get_numbuttons()):
-                    button_state = joystick.get_button(i)
-                    state[f"button_{i}"] = button_state
-                
-                # Call the callback with the current state
-                if self.callback:
-                    print(f"Sending state to callback: {state}")
-                    self.callback(state)
-                
-                # Small delay to prevent CPU overuse
-                pygame.time.wait(10)
-                
+                while self.running.is_set():
+                    pygame.event.pump()
+                    
+                    # Get current state
+                    state = {}
+                    
+                    # Get axis values
+                    for i in range(joystick.get_numaxes()):
+                        state[f'axis_{i}'] = joystick.get_axis(i)
+                    
+                    # Get button states
+                    for i in range(joystick.get_numbuttons()):
+                        state[f'button_{i}'] = joystick.get_button(i)
+                    
+                    # Send state to callback if it has changed
+                    if state != self._last_state:
+                        self._last_state = state.copy()
+                        if self.callback:
+                            self.callback(state)
+                        if self.button_callback:
+                            self.button_callback(state, self.buttons)
+                    
+                    time.sleep(0.01)  # Small delay to prevent CPU overuse
+                    
         except Exception as e:
             print(f"Error in pygame monitoring: {e}")
-            self.logger.log_error(e, {
-                "device": self.name,
-                "type": "pygame_monitoring"
-            })
+            self.logger.log_error(e, {"device": self.name})
         finally:
-            if 'joystick' in locals():
-                joystick.quit()
+            if pygame.get_init():
+                pygame.quit()
     
     def stop_monitoring(self):
         """Stop monitoring the device."""

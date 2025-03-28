@@ -132,7 +132,7 @@ class LisuManager:
                 }
             },
             "calibration": {
-                "default": {"deadzone": 0.1, "scale_factor": 1.0},
+                "default": {"deadzone": 0.2, "scale_factor": 1.0},
                 "devices": {
                     "Bluetooth_mouse": {
                         "deadzone": 0.1,
@@ -147,7 +147,7 @@ class LisuManager:
                         }
                     },
                     "axis 4 button joystick": {
-                        "deadzone": 0.1,
+                        "deadzone": 0.2,
                         "scale_factor": 1.0,
                         "axis_mapping": {
                             "axis_0": "addrotation",  # X axis
@@ -401,15 +401,6 @@ class LisuManager:
             return None
 
     def _process_state(self, state: Dict, deadzone: float, scale_factor: float, dev_config: Dict) -> None:
-        """
-        Process device state using configured transformations and optimisations.
-        
-        Args:
-            state: Current state of the device
-            deadzone: Base deadzone value
-            scale_factor: Base scale factor
-            dev_config: Device configuration dictionary
-        """
         try:
             # Update optimised state
             changed_keys = self.optimisation_manager.state.update(state)
@@ -421,57 +412,54 @@ class LisuManager:
             
             # Get device-specific calibration
             cal = self.config["calibration"]["devices"].get(device_name, self.config["calibration"]["default"])
-            deadzone = float(cal.get("deadzone", deadzone))
-            scale_factor = float(cal.get("scale_factor", scale_factor))
+            deadzone = float(cal.get("deadzone", 0.2))  # Default deadzone of 0.2
+            scale_factor = float(cal.get("scale_factor", 1.0))
             
             # Process each axis
-            for axis in dev_config["axes"]:
-                if axis not in state:
-                    continue
+            has_movement = False
+            x_value = 0.0
+            y_value = 0.0
+            z_value = 0.0
+            angle_value = 1.0  # Fixed angle value
+            
+            # Process x, y, z axes first
+            if "axis_0" in state:
+                value = state["axis_0"]
+                if abs(value) >= 0.2:  # Fixed deadzone
+                    x_value = value
+                    has_movement = True
+                    print(f"X axis value: {value:.3f}")
                     
-                value = state[axis]
-                
-                # Apply deadzone
-                if abs(value) < deadzone:
-                    value = 0.0
-                
-                # Apply scale factor
-                value *= scale_factor
-                
-                # Only process if value is non-zero
-                if value != 0.0:
-                    # Get axis mapping from configuration
-                    axis_mapping = cal.get("axis_mapping", {}).get(axis, "addrotation")
+            if "axis_1" in state:
+                value = state["axis_1"]
+                if abs(value) >= 0.2:  # Fixed deadzone
+                    y_value = value
+                    has_movement = True
+                    print(f"Y axis value: {value:.3f}")
                     
-                    # Create command based on mapping
-                    if axis_mapping == "addrotation":
-                        # For addrotation, map axes to x, y, z rotations
-                        if axis == "axis_0":  # X axis
-                            command = f"addrotation {value:.3f} 0.0 0.0 0.0"
-                        elif axis == "axis_1":  # Y axis
-                            command = f"addrotation 0.0 {value:.3f} 0.0 0.0"
-                        elif axis == "axis_2":  # Z axis
-                            command = f"addrotation 0.0 0.0 {value:.3f} 0.0"
-                        elif axis == "axis_3":  # Roll axis
-                            command = f"addrotation 0.0 0.0 0.0 {value:.3f}"
-                        else:
-                            continue
-                    else:
-                        # For other commands, use the mapping directly
-                        command = f"{axis_mapping} {value:.3f}"
-                    
-                    # Send command via UDP
-                    try:
-                        if hasattr(self, 'actuation') and self.actuation:
-                            self.actuation.sock.sendto(command.encode(), (self.actuation.udp_ip, self.actuation.udp_port))
-                            print(f"UDP Command sent: {command}")
-                    except Exception as e:
-                        print(f"Error sending UDP command: {e}")
-                        self.logger.log_error(e, {
-                            "device": self.dev_name,
-                            "command": command,
-                            "value": value
-                        })
+            if "axis_2" in state:
+                value = state["axis_2"]
+                if abs(value) >= 0.2:  # Fixed deadzone
+                    z_value = value
+                    has_movement = True
+                    print(f"Z axis value: {value:.3f}")
+            
+            # Only send UDP command if there's actual movement above deadzone
+            if has_movement:
+                command = f"addrotation {x_value:.3f} {y_value:.3f} {z_value:.3f} {angle_value:.3f}"
+                
+                # Send command via UDP
+                try:
+                    if hasattr(self, 'actuation') and self.actuation:
+                        self.actuation.sock.sendto(command.encode(), (self.actuation.udp_ip, self.actuation.udp_port))
+                        print(f"UDP Command sent: {command}")
+                except Exception as e:
+                    print(f"Error sending UDP command: {e}")
+                    self.logger.log_error(e, {
+                        "device": self.dev_name,
+                        "command": command,
+                        "values": {"x": x_value, "y": y_value, "z": z_value, "angle": angle_value}
+                    })
                     
         except Exception as e:
             print(f"Error in _process_state: {e}")
@@ -561,25 +549,19 @@ class LisuManager:
                 if button in state and state[button]:
                     print(f"Button {button} pressed, executing action: {action}")
                     if action == "increase_speed":
-                        # Increase the rotation speed by 0.1
-                        if "axis_0" in state:
-                            state["axis_0"] = min(1.0, state["axis_0"] + 0.1)
-                        if "axis_1" in state:
-                            state["axis_1"] = min(1.0, state["axis_1"] + 0.1)
-                        if "axis_2" in state:
-                            state["axis_2"] = min(1.0, state["axis_2"] + 0.1)
+                        # Increase the rotation speed by 1.0
                         if "axis_3" in state:
-                            state["axis_3"] = min(1.0, state["axis_3"] + 0.1)
+                            current_speed = 1.0 + (abs(state["axis_3"]) * 9.0)  # Get current speed
+                            new_speed = min(10.0, current_speed + 1.0)  # Cap at 10.0
+                            state["axis_3"] = (new_speed - 1.0) / 9.0  # Convert back to -1 to 1 range
+                            print(f"Rotation speed increased to: {new_speed:.1f}")
                     elif action == "decrease_speed":
-                        # Decrease the rotation speed by 0.1
-                        if "axis_0" in state:
-                            state["axis_0"] = max(-1.0, state["axis_0"] - 0.1)
-                        if "axis_1" in state:
-                            state["axis_1"] = max(-1.0, state["axis_1"] - 0.1)
-                        if "axis_2" in state:
-                            state["axis_2"] = max(-1.0, state["axis_2"] - 0.1)
+                        # Decrease the rotation speed by 1.0
                         if "axis_3" in state:
-                            state["axis_3"] = max(-1.0, state["axis_3"] - 0.1)
+                            current_speed = 1.0 + (abs(state["axis_3"]) * 9.0)  # Get current speed
+                            new_speed = max(1.0, current_speed - 1.0)  # Minimum 1.0
+                            state["axis_3"] = (new_speed - 1.0) / 9.0  # Convert back to -1 to 1 range
+                            print(f"Rotation speed decreased to: {new_speed:.1f}")
                     
                     # Log the button action
                     self.logger.log_event("button_action", {
@@ -893,10 +875,13 @@ class LisuManager:
             sys.exit(1)  # Exit with error code if cleanup fails
 
     def __del__(self):
-        """
-        Destructor to ensure proper cleanup of resources.
-        """
-        self.stop()
+        """Cleanup when the manager is destroyed."""
+        try:
+            if hasattr(self, 'running') and self.running:
+                self.stop()
+        except Exception as e:
+            print(f"Error during cleanup: {e}")
+            # Don't re-raise the exception in __del__
 
 if __name__ == "__main__":
     lisu = LisuManager()
