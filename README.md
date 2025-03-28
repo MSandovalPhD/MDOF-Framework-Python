@@ -27,7 +27,7 @@ LISU (Layered Interaction System for User-Modes) is a framework developed to man
 
 2. Install dependencies:
    ```bash
-   pip install -r requirements.txt
+   pip install -r demo/requirements.txt
    ```
 
 3. Verify the ontology file (`idoo.owl`) is in the `demo/data/` directory.
@@ -69,7 +69,7 @@ Press Ctrl+C to stop...
 Found target device: Bluetooth_mouse (VID: 046d, PID: b03a)
 Test 1 Passed: Detected Bluetooth_mouse (VID: 046d, PID: b03a)
 Test 2 Passed: Configured device successfully
-Test 3 Passed: Input normalized to 0.0787 (within -1 to 1)
+Test 3 Passed: Input normalised to 0.0787 (within -1 to 1)
 Test 4 Passed: Button toggled to y-axis
 Test 5 Passed: Y-axis input -0.0394 after toggle
 Running LISU for UDP test (5 seconds)...
@@ -94,7 +94,7 @@ Edit `demo/data/visualisation_config.json` (required):
 
 ### Limitation
 
-LISU requires a UDP listener at the configured IP and port (e.g., `127.0.0.1:7755` for Drishti) to receive actuation commands. Ensure your visualization tool supports this or set up a custom listener.
+LISU requires a UDP listener at the configured IP and port (e.g., `127.0.0.1:7755` for Drishti) to receive actuation commands. Ensure your visualisation tool supports this or set up a custom listener.
 
 ### Profiling
 
@@ -123,19 +123,22 @@ MDOF-Framework-Python/
 │   ├── tests/                  # Test scripts
 │   │   ├── __init__.py
 │   │   ├── test_lisufeatures.py
-├── requirements.txt            # Project dependencies
-└── setup.py                    # Setup script for packaging/distribution
+│   └── requirements.txt        # Project dependencies
+├── setup.py                    # Setup script for packaging/distribution
 └── README.md                   # Project overview
 ```
 
 ## Dependencies
 
-List of required Python packages (see `requirements.txt`):
-- `pywinusb` (for HID device handling)
-- `pygame` (for gamepad input)
-- `mouse` (for mouse control)
-- `rdflib` (for ontology parsing)
-- `qprompt` (for interactive menus)
+List of required Python packages with specific versions:
+
+- `pywinusb==0.4.2` (for HID device handling on Windows)
+- `pywin32==306` (for Windows-specific functionality)
+- `pygame==2.5.2` (for gamepad input and mouse control)
+- `mouse>=0.7.1` (for mouse control in LISU_mouse.py)
+- `rdflib>=7.0.0` (for RDF ontology parsing in LISU_datasource.py)
+- `qprompt>=0.3.0` (for interactive menus in test scripts)
+- `numpy>=1.26.4` (for numerical operations in actuation.py)
 
 ## License
 
