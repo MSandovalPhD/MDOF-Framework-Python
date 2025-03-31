@@ -142,11 +142,7 @@ List of required Python packages with specific versions:
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for more details.
-
-## Contributing
-
-Contributions are welcome! Please fork the repository, make changes, and submit pull requests. For major changes, please open an issue first to discuss.
+See the [LICENSE](LICENSE) file for more details.
 
 ## Contact
 
